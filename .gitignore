@@ -1,7 +1,9 @@
 # Python
 venv/
+.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
 
 # Node
 node_modules/
@@ -9,7 +11,10 @@ dist/
 
 # Environment
 .env
+.env.local
 
 # IDE
 .vscode/
 .idea/
+*.swp
+.DS_Store
