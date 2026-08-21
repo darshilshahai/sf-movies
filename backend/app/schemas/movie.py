@@ -22,3 +22,18 @@ class MovieLocation(BaseModel):
     actors: list[str] = Field(default_factory=list, description="Aggregated list of cast members")
     fun_facts: str | None = Field(default=None, description="Location trivia or narrative note")
     neighborhood: str | None = Field(default=None, description="San Francisco municipal neighborhood")
+
+
+class PaginationMeta(BaseModel):
+    """Metadata envelope describing response pagination details."""
+
+    count: int = Field(..., description="Number of items returned in the current response page")
+    limit: int = Field(..., description="Maximum number of items requested")
+    offset: int = Field(..., description="Pagination offset applied")
+
+
+class MovieListResponse(BaseModel):
+    """API response envelope for film location queries."""
+
+    data: list[MovieLocation] = Field(..., description="List of normalized film locations")
+    meta: PaginationMeta = Field(..., description="Response pagination metadata")

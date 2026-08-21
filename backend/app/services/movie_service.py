@@ -8,7 +8,7 @@ logger = logging.getLogger("sf_movies.movie_service")
 
 
 class MovieService:
-    """Service layer for fetching, normalizing, and filtering DataSF film locations."""
+    """Service layer for fetching, normalizing, filtering, and searching DataSF film locations."""
 
     def __init__(self, datasf_client: DataSFClient) -> None:
         self._datasf_client = datasf_client
@@ -58,6 +58,29 @@ class MovieService:
                 actors.append(normalized)
         return actors
 
+    def _build_soql_where(self, search: str | None = None, year: int | None = None) -> str | None:
+        """
+        Builds a safe SODA SoQL $where clause for search and release_year filters.
+
+        Sanitizes single quotes in search text to prevent SoQL injection/syntax errors.
+        """
+        clauses: list[str] = []
+
+        if search:
+            escaped_search = search.strip().replace("'", "''").lower()
+            if escaped_search:
+                clauses.append(
+                    f"(lower(title) like '%{escaped_search}%' or lower(locations) like '%{escaped_search}%')"
+                )
+
+        if year is not None:
+            clauses.append(f"release_year = '{year}'")
+
+        if not clauses:
+            return None
+
+        return " and ".join(clauses)
+
     def normalize_record(self, record: dict[str, Any]) -> MovieLocation | None:
         """Normalizes a single raw DataSF record into a MovieLocation model, returning None if unusable."""
         title = self._normalize_string(record.get("title"))
@@ -94,24 +117,26 @@ class MovieService:
     async def get_movie_locations(
         self,
         *,
+        search: str | None = None,
+        year: int | None = None,
         limit: int = 100,
         offset: int = 0,
-        where: str | None = None,
-        order: str | None = None,
-        q: str | None = None,
     ) -> list[MovieLocation]:
         """
-        Fetches raw records from DataSFClient and transforms them into normalized MovieLocation objects.
+        Fetches raw records from DataSFClient using safe SoQL parameters, normalizing and deduplicating results.
 
-        Unusable records (missing title, location, or coordinates) are safely skipped.
-        Exact duplicates within the batch are deduplicated.
+        :param search: Optional title/location search query string.
+        :param year: Optional release year integer filter.
+        :param limit: Maximum number of location records to return.
+        :param offset: Pagination offset.
+        :return: List of normalized MovieLocation domain objects.
         """
+        soql_where = self._build_soql_where(search=search, year=year)
+
         raw_records = await self._datasf_client.get_film_locations(
             limit=limit,
             offset=offset,
-            where=where,
-            order=order,
-            q=q,
+            where=soql_where,
         )
 
         normalized_locations: list[MovieLocation] = []
@@ -136,6 +161,7 @@ class MovieService:
             normalized_locations.append(item)
 
         logger.info(
-            f"movie_transformation_completed input_raw={len(raw_records)} output_normalized={len(normalized_locations)}"
+            f"movie_transformation_completed input_raw={len(raw_records)} "
+            f"output_normalized={len(normalized_locations)} search='{search}' year={year}"
         )
         return normalized_locations

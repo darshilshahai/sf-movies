@@ -274,3 +274,30 @@ async def test_exact_duplicate_deduplication():
 
     assert len(result) == 1
     assert result[0].title == "Milk"
+
+
+def test_soql_where_construction():
+    """Test 14: Verifies SoQL $where clause construction, parameter combination, and quote escaping."""
+    service = MovieService(datasf_client=FakeDataSFClient())
+
+    # Case A: No filters
+    assert service._build_soql_where() is None
+
+    # Case B: Search only
+    where_search = service._build_soql_where(search="vertigo")
+    assert where_search == "(lower(title) like '%vertigo%' or lower(locations) like '%vertigo%')"
+
+    # Case C: Year only
+    where_year = service._build_soql_where(year=1958)
+    assert where_year == "release_year = '1958'"
+
+    # Case D: Search + Year combined
+    where_combined = service._build_soql_where(search="vertigo", year=1958)
+    assert (
+        where_combined
+        == "(lower(title) like '%vertigo%' or lower(locations) like '%vertigo%') and release_year = '1958'"
+    )
+
+    # Case E: Quote escaping (e.g. O'Brien -> o''brien)
+    where_quote = service._build_soql_where(search="O'Brien")
+    assert "o''brien" in where_quote
