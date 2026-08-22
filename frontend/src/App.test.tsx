@@ -80,11 +80,55 @@ describe("App & HomePage Leaflet Map Integration", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Showing 1 filming locations")
+        screen.getByText("Showing 1 filming location")
       ).toBeInTheDocument();
       expect(screen.getByTestId("mock-movie-map")).toBeInTheDocument();
       expect(
         screen.getByText("Mock Movie Map with 1 markers (Filtered: false)")
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("formats plural location count correctly for multiple locations", async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            title: "Vertigo",
+            release_year: 1958,
+            location: "Mission Dolores",
+            coordinates: { latitude: 37.76, longitude: -122.42 },
+            director: "Alfred Hitchcock",
+            production_company: null,
+            distributor: null,
+            writer: null,
+            actors: [],
+            fun_facts: null,
+            neighborhood: null,
+          },
+          {
+            title: "The Rock",
+            release_year: 1996,
+            location: "Alcatraz Island",
+            coordinates: { latitude: 37.82, longitude: -122.42 },
+            director: "Michael Bay",
+            production_company: null,
+            distributor: null,
+            writer: null,
+            actors: [],
+            fun_facts: null,
+            neighborhood: null,
+          },
+        ],
+        meta: { count: 2, limit: 500, offset: 0 },
+      },
+    });
+
+    renderWithClient(<App />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Showing 2 filming locations")
       ).toBeInTheDocument();
     });
   });
@@ -159,7 +203,7 @@ describe("App & HomePage Leaflet Map Integration", () => {
     await waitFor(() => {
       expect(screen.getByText(/Filtering by movie:/i)).toBeInTheDocument();
       expect(screen.getByText('"Vertigo"')).toBeInTheDocument();
-      expect(screen.getByText("1 filtered location")).toBeInTheDocument();
+      expect(screen.getByText("1 filtered filming location")).toBeInTheDocument();
       expect(
         screen.getByText("Mock Movie Map with 1 markers (Filtered: true)")
       ).toBeInTheDocument();
@@ -175,7 +219,7 @@ describe("App & HomePage Leaflet Map Integration", () => {
     });
   });
 
-  it("renders error state when API fails", async () => {
+  it("renders error state when API fails and supports retry", async () => {
     vi.mocked(apiClient.get).mockRejectedValueOnce(new Error("Upstream Error"));
 
     renderWithClient(<App />);
@@ -185,6 +229,19 @@ describe("App & HomePage Leaflet Map Integration", () => {
         screen.getByText("Unable to load filming locations")
       ).toBeInTheDocument();
       expect(screen.getByText("Try Again")).toBeInTheDocument();
+    });
+
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [],
+        meta: { count: 0, limit: 500, offset: 0 },
+      },
+    });
+
+    fireEvent.click(screen.getByText("Try Again"));
+
+    await waitFor(() => {
+      expect(screen.getByText("No filming locations found.")).toBeInTheDocument();
     });
   });
 

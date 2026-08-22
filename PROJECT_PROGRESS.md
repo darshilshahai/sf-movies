@@ -263,6 +263,27 @@ We connected search autocomplete selection to server-side movie location filteri
    - Multiple markers: Fits bounds (`map.fitBounds`) around all location coordinates with padding `[40, 40]`.
    - Reset: Returns map to San Francisco default center (`[37.7749, -122.4194]`, zoom `12`) when search is cleared.
 
+266: ---
+
+### Phase 13 — Loading, Error, Empty States & Responsive UI Polish
+
+#### What We Did:
+We polished the application into a production-grade, interview-ready UI with extracted presentational components (`ResultStatus.tsx`, `ErrorState.tsx`), count pluralization, WAI-ARIA live region updates, background refetch status badges, and responsive map container heights.
+
+#### Key Highlights & Architecture:
+1. **Result Status & Accessibility (`ResultStatus.tsx`):**
+   - Formats location count grammar ("1 filming location" vs "2 filming locations").
+   - Includes `role="status"` and `aria-live="polite"` for screen-reader notifications.
+   - Displays active filter badge (`Filtering by movie: "Vertigo"`) with an inline Reset button.
+2. **Recoverable Error Feedback (`ErrorState.tsx`):**
+   - Renders clear, friendly error messages with an explicit `Try Again` action (`refetch()`).
+   - Disables retry button while refetching to prevent duplicate requests.
+3. **Background Updating Overlay:**
+   - Displays a non-blocking `"Updating map..."` pill in the top-right corner over the map while refetching filtered queries (`isFetching && !isLoading`).
+4. **Responsive Ergonomics:**
+   - Responsive container padding (`px-4 sm:px-6 lg:px-8`) and search input font size (`16px` on mobile preventing unwanted browser zoom).
+   - Responsive map height (`h-[450px] md:h-[550px] lg:h-[650px]`).
+
 ---
 
 ## 🧪 Testing & Quality Assurance Summary
@@ -282,18 +303,19 @@ cd backend
 cd frontend
 npm test
 ```
-- **Coverage:** 16 tests across `App.test.tsx`, `MoviePopup.test.tsx`, and `SearchAutocomplete.test.tsx` (verifying server-side search filtering, active filter callouts, map bounds updates, debouncing, and keyboard accessibility).
-- **Result:** `16 passed in 2.77s`
+- **Coverage:** 17 tests across `App.test.tsx`, `MoviePopup.test.tsx`, and `SearchAutocomplete.test.tsx` (verifying pluralization, loading, error retry, search filtering, and keyboard accessibility).
+- **Result:** `17 passed in 2.91s`
 
 ### Production Build Verification:
 ```bash
 cd frontend
 npm run build
 ```
-- **Result:** `✓ built in 250ms` (0 TypeScript / ESLint errors).
+- **Result:** `✓ built in 187ms` (0 TypeScript / ESLint errors).
 
 ---
 
 ## 🚀 Next Steps
 
-We are ready to move on to **Phase 13**!
+We are ready to move on to **Phase 14**!
+

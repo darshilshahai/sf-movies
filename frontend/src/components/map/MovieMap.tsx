@@ -30,7 +30,7 @@ type MovieMapProps = {
  */
 export default function MovieMap({ movies, isFiltered = false }: MovieMapProps) {
   return (
-    <div className="w-full h-[500px] md:h-[650px] rounded-xl overflow-hidden shadow-2xl border border-slate-800 relative z-0">
+    <div className="w-full h-[450px] md:h-[550px] lg:h-[650px] rounded-xl overflow-hidden shadow-2xl border border-slate-800 relative z-0">
       <MapContainer
         center={SAN_FRANCISCO_CENTER}
         zoom={DEFAULT_MAP_ZOOM}
