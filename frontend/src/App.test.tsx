@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
@@ -6,9 +6,15 @@ import { apiClient } from "./api/client";
 
 // Mock MovieMap component to avoid Leaflet JSDOM container sizing issues in unit tests
 vi.mock("./components/map/MovieMap", () => ({
-  default: ({ movies }: { movies: Array<{ title: string; location: string }> }) => (
+  default: ({
+    movies,
+    isFiltered,
+  }: {
+    movies: Array<{ title: string; location: string }>;
+    isFiltered: boolean;
+  }) => (
     <div data-testid="mock-movie-map">
-      Mock Movie Map with {movies.length} markers
+      Mock Movie Map with {movies.length} markers (Filtered: {String(isFiltered)})
     </div>
   ),
 }));
@@ -78,8 +84,94 @@ describe("App & HomePage Leaflet Map Integration", () => {
       ).toBeInTheDocument();
       expect(screen.getByTestId("mock-movie-map")).toBeInTheDocument();
       expect(
-        screen.getByText("Mock Movie Map with 1 markers")
+        screen.getByText("Mock Movie Map with 1 markers (Filtered: false)")
       ).toBeInTheDocument();
+    });
+  });
+
+  it("filters map server-side when movie suggestion is selected", async () => {
+    // Initial fetch for all movies
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            title: "Vertigo",
+            release_year: 1958,
+            location: "Mission Dolores",
+            coordinates: { latitude: 37.76, longitude: -122.42 },
+            director: "Alfred Hitchcock",
+            production_company: "Paramount",
+            distributor: null,
+            writer: null,
+            actors: ["James Stewart"],
+            fun_facts: null,
+            neighborhood: "Mission",
+          },
+        ],
+        meta: { count: 1, limit: 500, offset: 0 },
+      },
+    });
+
+    renderWithClient(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-movie-map")).toBeInTheDocument();
+    });
+
+    // Autocomplete suggestion fetch for "vert"
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [{ value: "Vertigo", type: "movie" }],
+      },
+    });
+
+    const searchInput = screen.getByRole("combobox");
+    fireEvent.change(searchInput, { target: { value: "vert" } });
+
+    await waitFor(() => {
+      expect(screen.getByText("Vertigo")).toBeInTheDocument();
+    });
+
+    // Filtered movie location fetch when "Vertigo" is selected
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            title: "Vertigo",
+            release_year: 1958,
+            location: "Mission Dolores",
+            coordinates: { latitude: 37.76, longitude: -122.42 },
+            director: "Alfred Hitchcock",
+            production_company: "Paramount",
+            distributor: null,
+            writer: null,
+            actors: ["James Stewart"],
+            fun_facts: null,
+            neighborhood: "Mission",
+          },
+        ],
+        meta: { count: 1, limit: 500, offset: 0 },
+      },
+    });
+
+    fireEvent.click(screen.getByText("Vertigo"));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Filtering by movie:/i)).toBeInTheDocument();
+      expect(screen.getByText('"Vertigo"')).toBeInTheDocument();
+      expect(screen.getByText("1 filtered location")).toBeInTheDocument();
+      expect(
+        screen.getByText("Mock Movie Map with 1 markers (Filtered: true)")
+      ).toBeInTheDocument();
+    });
+
+    // Reset filter
+    fireEvent.click(screen.getByText("Reset Filter"));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Filtering by movie:/i)
+      ).not.toBeInTheDocument();
     });
   });
 

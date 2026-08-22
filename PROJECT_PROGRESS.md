@@ -247,6 +247,24 @@ We built an accessible, keyboard-navigable search autocomplete component (`Searc
 
 ---
 
+### Phase 12 — Connect Search to Map Filtering
+
+#### What We Did:
+We connected search autocomplete selection to server-side movie location filtering (`GET /api/v1/movies?title=` for movie suggestions, `GET /api/v1/movies?location=` for location suggestions) and built an automatic Leaflet viewport bounds controller (`MapBoundsController.tsx`).
+
+#### Key Highlights & Architecture:
+1. **Backend Exact Filters (`movie_service.py` & `movies.py`):** Added `title` and `location` query parameters to `GET /api/v1/movies`, generating exact SoQL equality clauses (`lower(title) = 'escaped_title'` / `lower(locations) = 'escaped_location'`) with single-quote escaping.
+2. **State Ownership & Query Invalidation (`HomePage.tsx`):**
+   - Managed `selectedSuggestion` state in `HomePage.tsx`.
+   - Derived `GetMoviesParams` (`{ title: value }` vs `{ location: value }`), automatically triggering TanStack Query refetches when selection updates.
+   - Displayed active filter callout badge (`Filtering by movie: "Vertigo"`) with instant Reset button.
+3. **Automatic Map Viewport Controller (`MapBoundsController.tsx`):**
+   - Single marker: Centers map around location (`map.setView`) with zoom `15`.
+   - Multiple markers: Fits bounds (`map.fitBounds`) around all location coordinates with padding `[40, 40]`.
+   - Reset: Returns map to San Francisco default center (`[37.7749, -122.4194]`, zoom `12`) when search is cleared.
+
+---
+
 ## 🧪 Testing & Quality Assurance Summary
 
 We maintain **100% automated test suite pass rate** across backend and frontend:
@@ -256,26 +274,26 @@ We maintain **100% automated test suite pass rate** across backend and frontend:
 cd backend
 .venv/bin/pytest -v
 ```
-- **Coverage:** 56 tests across config, health, DataSF client, MovieService, movies API, and search API.
-- **Result:** `56 passed in 0.22s`
+- **Coverage:** 58 tests across config, health, DataSF client, MovieService, movies API (including exact title and location filters), and search API.
+- **Result:** `58 passed in 0.21s`
 
 ### Frontend Vitest Suite:
 ```bash
 cd frontend
 npm test
 ```
-- **Coverage:** 15 tests across `App.test.tsx`, `MoviePopup.test.tsx`, and `SearchAutocomplete.test.tsx` (testing debouncing, minimum query length, mouse click selection, keyboard navigation, clear button, and empty/error dropdown states).
-- **Result:** `15 passed in 2.79s`
+- **Coverage:** 16 tests across `App.test.tsx`, `MoviePopup.test.tsx`, and `SearchAutocomplete.test.tsx` (verifying server-side search filtering, active filter callouts, map bounds updates, debouncing, and keyboard accessibility).
+- **Result:** `16 passed in 2.77s`
 
 ### Production Build Verification:
 ```bash
 cd frontend
 npm run build
 ```
-- **Result:** `✓ built in 200ms` (0 TypeScript / ESLint errors).
+- **Result:** `✓ built in 250ms` (0 TypeScript / ESLint errors).
 
 ---
 
 ## 🚀 Next Steps
 
-We are ready to move on to **Phase 12**!
+We are ready to move on to **Phase 13**!

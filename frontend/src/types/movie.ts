@@ -30,6 +30,8 @@ export type MovieListResponse = {
 
 export type GetMoviesParams = {
   search?: string;
+  title?: string;
+  location?: string;
   year?: number;
   limit?: number;
   offset?: number;

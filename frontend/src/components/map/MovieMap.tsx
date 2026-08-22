@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import type { MovieLocation } from "../../types/movie";
 import { SAN_FRANCISCO_CENTER, DEFAULT_MAP_ZOOM } from "../../constants/map";
 import MoviePopup from "./MoviePopup";
+import MapBoundsController from "./MapBoundsController";
 
 // Import Leaflet marker assets explicitly for Vite bundler compatibility
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -20,13 +21,14 @@ L.Icon.Default.mergeOptions({
 
 type MovieMapProps = {
   movies: MovieLocation[];
+  isFiltered?: boolean;
 };
 
 /**
  * Presentational component rendering an interactive Leaflet map focused on San Francisco.
  * Places markers at latitude/longitude coordinates and renders a rich MoviePopup for each location.
  */
-export default function MovieMap({ movies }: MovieMapProps) {
+export default function MovieMap({ movies, isFiltered = false }: MovieMapProps) {
   return (
     <div className="w-full h-[500px] md:h-[650px] rounded-xl overflow-hidden shadow-2xl border border-slate-800 relative z-0">
       <MapContainer
@@ -39,6 +41,8 @@ export default function MovieMap({ movies }: MovieMapProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        <MapBoundsController movies={movies} isFiltered={isFiltered} />
 
         {movies.map((movie, index) => (
           <Marker
