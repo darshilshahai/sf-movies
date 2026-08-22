@@ -179,27 +179,49 @@ We built a fast, case-insensitive, deduplicated, and ranked autocomplete search 
 
 ---
 
+### Phase 8 — Frontend Foundation & API Integration
+
+#### What We Did:
+We created a clean React + TypeScript frontend architecture connected to the FastAPI backend using Axios and TanStack Query with strongly-typed API models and custom data fetching hooks.
+
+#### Key Highlights & Architecture:
+1. **Centralized API Client:** Created `src/api/client.ts` with base URL validation from `VITE_API_BASE_URL` and a 10s request timeout.
+2. **Strongly Typed Models:** Created `src/types/movie.ts` and `src/types/search.ts` mirroring backend FastAPI response contracts (`MovieLocation`, `MovieListResponse`, `SearchSuggestion`).
+3. **API Modules:** Implemented `getMovies(params)` and `getSearchSuggestions(query, limit)` in `src/api/movies.ts` and `src/api/search.ts`.
+4. **TanStack Query Hooks:** Created `useMovies()` and `useSearchSuggestions()` with `enabled: query.length >= 2` guard logic.
+5. **HomePage & State Verification:** Built `HomePage` component rendering loading, error, empty, and data preview (3-5 sample items) states to verify end-to-end connectivity (`React -> FastAPI -> DataSF`).
+
+---
+
 ## 🧪 Testing & Quality Assurance Summary
 
-We maintain **100% automated test suite pass rate**:
+We maintain **100% automated test suite pass rate** across backend and frontend:
 
+### Backend Pytest Suite:
 ```bash
 cd backend
 .venv/bin/pytest -v
 ```
+- **Coverage:** 56 tests across config, health, DataSF client, MovieService, movies API, and search API.
+- **Result:** `56 passed in 0.21s`
 
-### Test Coverage:
-- **`tests/test_config.py`**: Settings loading tests.
-- **`tests/test_health.py`**: Health endpoint check tests.
-- **`tests/test_datasf_client.py`**: 8 client transport tests.
-- **`tests/test_movie_service.py`**: 26 service normalization and autocomplete tests (title match, location match, duplicate titles/locations, case-insensitivity, missing values, empty results, prefix ranking, limits, upstream exceptions, special character escaping).
-- **`tests/test_movies_api.py`**: 10 movie list route integration tests.
-- **`tests/test_search_api.py`**: 10 autocomplete search route integration tests (200 OK success, missing query 422, query too short 422, query too long 422, custom limit, invalid limit 0 and >15 422, empty 200 OK, upstream 502 propagation, trimmed short query).
+### Frontend Vitest Suite:
+```bash
+cd frontend
+npm test
+```
+- **Coverage:** 4 tests in `App.test.tsx` verifying loading state, data preview rendering, error state, and search API parameters.
+- **Result:** `4 passed in 0.58s`
 
-**Result:** `56 passed in 0.15s`
+### Production Build Verification:
+```bash
+cd frontend
+npm run build
+```
+- **Result:** `✓ built in 102ms` (0 TypeScript / ESLint errors).
 
 ---
 
 ## 🚀 Next Steps
 
-We are ready to move on to **Phase 8**!
+We are ready to move on to **Phase 9**!
