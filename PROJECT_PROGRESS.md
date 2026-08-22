@@ -210,6 +210,23 @@ We replaced the temporary movie data preview with a fully interactive OpenStreet
 
 ---
 
+### Phase 10 — Movie Markers & Detailed Popups
+
+#### What We Did:
+We extracted a dedicated, presentational `MoviePopup` component to display structured, rich movie metadata (title, release year, filming location, neighborhood, director, cast list, studio, and fun facts) with conditional null-hiding and polished dark theme CSS styling.
+
+#### Key Highlights & Architecture:
+1. **Extracted `MoviePopup.tsx` Component:**
+   - Isolated popup presentation into `src/components/map/MoviePopup.tsx`.
+   - Displays clear typography hierarchy (Amber title, badges, metadata labels, bullet-separated cast list).
+2. **Conditional Metadata Rendering:**
+   - Hides absent optional metadata cleanly without rendering `null` text or empty placeholders (no `"Director: null"` or `"N/A"`).
+3. **Custom Leaflet Dark Theme Styling (`index.css`):**
+   - Applied CSS overrides for `.leaflet-popup-content-wrapper`, `.leaflet-popup-content`, `.leaflet-popup-tip`, and `.leaflet-popup-close-button` matching the application's slate/amber theme.
+4. **Zero Network Call Overhead:** Popup consumes pre-normalized `MovieLocation` props without triggering extra API requests on marker click.
+
+---
+
 ## 🧪 Testing & Quality Assurance Summary
 
 We maintain **100% automated test suite pass rate** across backend and frontend:
@@ -220,25 +237,25 @@ cd backend
 .venv/bin/pytest -v
 ```
 - **Coverage:** 56 tests across config, health, DataSF client, MovieService, movies API, and search API.
-- **Result:** `56 passed in 0.23s`
+- **Result:** `56 passed in 0.20s`
 
 ### Frontend Vitest Suite:
 ```bash
 cd frontend
 npm test
 ```
-- **Coverage:** 4 tests in `App.test.tsx` verifying map loading, location count badge, success, error, and empty states.
-- **Result:** `4 passed in 0.62s`
+- **Coverage:** 6 tests across `App.test.tsx` and `MoviePopup.test.tsx` verifying map rendering, metadata formatting, bullet cast list, and conditional null-hiding.
+- **Result:** `6 passed in 0.67s`
 
 ### Production Build Verification:
 ```bash
 cd frontend
 npm run build
 ```
-- **Result:** `✓ built in 130ms` (0 TypeScript / ESLint errors).
+- **Result:** `✓ built in 180ms` (0 TypeScript / ESLint errors).
 
 ---
 
 ## 🚀 Next Steps
 
-We are ready to move on to **Phase 10**!
+We are ready to move on to **Phase 11**!

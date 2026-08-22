@@ -2,6 +2,7 @@ import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import type { MovieLocation } from "../../types/movie";
 import { SAN_FRANCISCO_CENTER, DEFAULT_MAP_ZOOM } from "../../constants/map";
+import MoviePopup from "./MoviePopup";
 
 // Import Leaflet marker assets explicitly for Vite bundler compatibility
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -23,7 +24,7 @@ type MovieMapProps = {
 
 /**
  * Presentational component rendering an interactive Leaflet map focused on San Francisco.
- * Places markers at latitude/longitude coordinates for each normalized film location.
+ * Places markers at latitude/longitude coordinates and renders a rich MoviePopup for each location.
  */
 export default function MovieMap({ movies }: MovieMapProps) {
   return (
@@ -45,24 +46,7 @@ export default function MovieMap({ movies }: MovieMapProps) {
             position={[movie.coordinates.latitude, movie.coordinates.longitude]}
           >
             <Popup>
-              <div className="p-1 max-w-xs space-y-1 text-slate-900">
-                <h3 className="font-bold text-sm leading-snug">
-                  {movie.title}
-                </h3>
-                {movie.release_year && (
-                  <p className="text-xs font-semibold text-slate-500">
-                    Released: {movie.release_year}
-                  </p>
-                )}
-                <p className="text-xs text-slate-700 font-medium">
-                  📍 {movie.location}
-                </p>
-                {movie.director && (
-                  <p className="text-xs text-slate-500 italic pt-1 border-t border-slate-200 mt-1">
-                    Directed by {movie.director}
-                  </p>
-                )}
-              </div>
+              <MoviePopup movie={movie} />
             </Popup>
           </Marker>
         ))}
