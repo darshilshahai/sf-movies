@@ -233,4 +233,30 @@ describe("SearchAutocomplete Component", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("dismisses dropdown when clicking outside component", async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [{ value: "Vertigo", type: "movie" }],
+      },
+    });
+
+    renderWithClient(
+      <div>
+        <SearchAutocomplete onSelect={mockOnSelect} onClear={mockOnClear} />
+        <div data-testid="outside-element">Outside</div>
+      </div>
+    );
+
+    const input = screen.getByRole("combobox");
+    fireEvent.change(input, { target: { value: "vert" } });
+
+    await waitFor(() => {
+      expect(screen.getByRole("listbox")).toBeInTheDocument();
+    });
+
+    fireEvent.mouseDown(screen.getByTestId("outside-element"));
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
 });
+

@@ -478,3 +478,32 @@ async def test_autocomplete_special_character_query():
     assert len(suggestions) >= 1
     assert any("O'Brien" in s.value for s in suggestions)
 
+
+@pytest.mark.asyncio
+async def test_coordinate_exact_boundary_values():
+    """Test 27: Exact WGS84 boundary coordinate values (-90.0, 90.0, -180.0, 180.0) are valid."""
+    raw_data = [
+        {
+            "title": "North Pole Movie",
+            "locations": "Arctic Center",
+            "latitude": "90.0",
+            "longitude": "-180.0",
+        },
+        {
+            "title": "South Pole Movie",
+            "locations": "Antarctic Base",
+            "latitude": "-90.0",
+            "longitude": "180.0",
+        },
+    ]
+
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+    result = await service.get_movie_locations()
+
+    assert len(result) == 2
+    assert result[0].coordinates.latitude == 90.0
+    assert result[0].coordinates.longitude == -180.0
+    assert result[1].coordinates.latitude == -90.0
+    assert result[1].coordinates.longitude == 180.0
+
+

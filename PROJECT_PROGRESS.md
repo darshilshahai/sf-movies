@@ -284,6 +284,23 @@ We polished the application into a production-grade, interview-ready UI with ext
    - Responsive container padding (`px-4 sm:px-6 lg:px-8`) and search input font size (`16px` on mobile preventing unwanted browser zoom).
    - Responsive map height (`h-[450px] md:h-[550px] lg:h-[650px]`).
 
+287: ---
+
+### Phase 14 — Full Testing & Reliability Pass
+
+#### What We Did:
+We conducted a comprehensive reliability, test coverage, and security audit across the full-stack repository, expanding test cases for upstream HTTP 403/404 handling, coordinate boundary constraints (-90.0, 90.0, -180.0, 180.0), and outside-click dropdown dismissal while verifying zero debug logs and zero committed secrets.
+
+#### Key Highlights & Architecture:
+1. **Backend Edge-Case Test Expansion (`test_datasf_client.py` & `test_movie_service.py`):**
+   - Added HTTP 403/404 forbidden/not found upstream failure test assertions.
+   - Added exact WGS84 boundary coordinate validation tests.
+2. **Frontend Outside-Click Dismissal Test (`SearchAutocomplete.test.tsx`):**
+   - Added test verifying container ref outside-click event handler dismisses dropdown suggestions cleanly.
+3. **Full-Stack Reliability & Security Audit:**
+   - 0 debug `console.log` or `print` statements in production source files.
+   - Verified `.gitignore` prevents tracking `.env`, `.venv`, `node_modules`, `dist`, or `__pycache__`.
+
 ---
 
 ## 🧪 Testing & Quality Assurance Summary
@@ -295,27 +312,28 @@ We maintain **100% automated test suite pass rate** across backend and frontend:
 cd backend
 .venv/bin/pytest -v
 ```
-- **Coverage:** 58 tests across config, health, DataSF client, MovieService, movies API (including exact title and location filters), and search API.
-- **Result:** `58 passed in 0.21s`
+- **Coverage:** 60 tests across config, health, DataSF client, MovieService, movies API, and search API.
+- **Result:** `60 passed in 0.23s`
 
 ### Frontend Vitest Suite:
 ```bash
 cd frontend
 npm test
 ```
-- **Coverage:** 17 tests across `App.test.tsx`, `MoviePopup.test.tsx`, and `SearchAutocomplete.test.tsx` (verifying pluralization, loading, error retry, search filtering, and keyboard accessibility).
-- **Result:** `17 passed in 2.91s`
+- **Coverage:** 18 tests across `App.test.tsx`, `MoviePopup.test.tsx`, and `SearchAutocomplete.test.tsx` (verifying outside-click dismissal, debouncing, keyboard navigation, server-side filtering, and error retry).
+- **Result:** `18 passed in 3.09s`
 
 ### Production Build Verification:
 ```bash
 cd frontend
 npm run build
 ```
-- **Result:** `✓ built in 187ms` (0 TypeScript / ESLint errors).
+- **Result:** `✓ built in 178ms` (0 TypeScript / ESLint errors).
 
 ---
 
 ## 🚀 Next Steps
 
-We are ready to move on to **Phase 14**!
+We are ready to move on to **Phase 15**!
+
 

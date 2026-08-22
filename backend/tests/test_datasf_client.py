@@ -150,9 +150,26 @@ async def test_get_film_locations_query_params():
         q="vertigo",
     )
 
-    assert recorded_url is not None
     assert recorded_url.params["$limit"] == "25"
     assert recorded_url.params["$offset"] == "50"
     assert recorded_url.params["$where"] == "release_year > 2000"
     assert recorded_url.params["$order"] == "release_year DESC"
     assert recorded_url.params["$q"] == "vertigo"
+
+
+@pytest.mark.asyncio
+async def test_get_film_locations_upstream_http_403_404():
+    """Test 9: Upstream HTTP 403 Forbidden or 404 Not Found raises UpstreamServiceException."""
+
+    def transport_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403, text="Forbidden")
+
+    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(transport_handler))
+    datasf_client = DataSFClient(client=mock_client)
+
+    with pytest.raises(UpstreamServiceException) as exc_info:
+        await datasf_client.get_film_locations()
+
+    assert exc_info.value.code == "UPSTREAM_SERVICE_ERROR"
+    assert exc_info.value.status_code == 502
+
