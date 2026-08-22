@@ -19,11 +19,20 @@ class MockMovieService:
         self,
         *,
         search: str | None = None,
+        title: str | None = None,
+        location: str | None = None,
         year: int | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[MovieLocation]:
-        self.last_query = {"search": search, "year": year, "limit": limit, "offset": offset}
+        self.last_query = {
+            "search": search,
+            "title": title,
+            "location": location,
+            "year": year,
+            "limit": limit,
+            "offset": offset,
+        }
         if self._raise_exc:
             raise self._raise_exc
         return self._locations
@@ -172,3 +181,30 @@ def test_list_movies_upstream_error_propagation():
         }
     finally:
         app.dependency_overrides.clear()
+
+
+def test_list_movies_title_param():
+    """Test 11: Exact title query parameter reaches the service layer."""
+    mock_service = MockMovieService(locations=[])
+    app.dependency_overrides[get_movie_service] = lambda: mock_service
+
+    try:
+        response = client.get("/api/v1/movies?title=Vertigo")
+        assert response.status_code == 200
+        assert mock_service.last_query["title"] == "Vertigo"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_list_movies_location_param():
+    """Test 12: Exact location query parameter reaches the service layer."""
+    mock_service = MockMovieService(locations=[])
+    app.dependency_overrides[get_movie_service] = lambda: mock_service
+
+    try:
+        response = client.get("/api/v1/movies?location=Golden%20Gate%20Bridge")
+        assert response.status_code == 200
+        assert mock_service.last_query["location"] == "Golden Gate Bridge"
+    finally:
+        app.dependency_overrides.clear()
+

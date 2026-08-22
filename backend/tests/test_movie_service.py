@@ -302,6 +302,14 @@ def test_soql_where_construction():
     where_quote = service._build_soql_where(search="O'Brien")
     assert "o''brien" in where_quote
 
+    # Case F: Title filter
+    where_title = service._build_soql_where(title="Vertigo")
+    assert where_title == "lower(title) = 'vertigo'"
+
+    # Case G: Location filter
+    where_location = service._build_soql_where(location="Golden Gate Bridge")
+    assert where_location == "lower(locations) = 'golden gate bridge'"
+
 
 @pytest.mark.asyncio
 async def test_autocomplete_movie_title_match():

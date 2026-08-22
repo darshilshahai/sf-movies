@@ -59,13 +59,29 @@ class MovieService:
                 actors.append(normalized)
         return actors
 
-    def _build_soql_where(self, search: str | None = None, year: int | None = None) -> str | None:
+    def _build_soql_where(
+        self,
+        search: str | None = None,
+        title: str | None = None,
+        location: str | None = None,
+        year: int | None = None,
+    ) -> str | None:
         """
-        Builds a safe SODA SoQL $where clause for search and release_year filters.
+        Builds a safe SODA SoQL $where clause for search, title, location, and release_year filters.
 
-        Sanitizes single quotes in search text to prevent SoQL injection/syntax errors.
+        Sanitizes single quotes in text to prevent SoQL injection/syntax errors.
         """
         clauses: list[str] = []
+
+        if title:
+            escaped_title = title.strip().replace("'", "''").lower()
+            if escaped_title:
+                clauses.append(f"lower(title) = '{escaped_title}'")
+
+        if location:
+            escaped_location = location.strip().replace("'", "''").lower()
+            if escaped_location:
+                clauses.append(f"lower(locations) = '{escaped_location}'")
 
         if search:
             escaped_search = search.strip().replace("'", "''").lower()
@@ -119,6 +135,8 @@ class MovieService:
         self,
         *,
         search: str | None = None,
+        title: str | None = None,
+        location: str | None = None,
         year: int | None = None,
         limit: int = 100,
         offset: int = 0,
@@ -126,13 +144,17 @@ class MovieService:
         """
         Fetches raw records from DataSFClient using safe SoQL parameters, normalizing and deduplicating results.
 
-        :param search: Optional title/location search query string.
+        :param search: Optional title/location fuzzy search query string.
+        :param title: Optional exact movie title query string.
+        :param location: Optional exact filming location query string.
         :param year: Optional release year integer filter.
         :param limit: Maximum number of location records to return.
         :param offset: Pagination offset.
         :return: List of normalized MovieLocation domain objects.
         """
-        soql_where = self._build_soql_where(search=search, year=year)
+        soql_where = self._build_soql_where(
+            search=search, title=title, location=location, year=year
+        )
 
         raw_records = await self._datasf_client.get_film_locations(
             limit=limit,

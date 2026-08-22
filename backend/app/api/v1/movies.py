@@ -40,6 +40,18 @@ async def list_movies(
         max_length=100,
         description="Case-insensitive search query matching movie title or filming location name.",
     ),
+    title: str | None = Query(
+        None,
+        min_length=1,
+        max_length=100,
+        description="Exact movie title filter.",
+    ),
+    location: str | None = Query(
+        None,
+        min_length=1,
+        max_length=100,
+        description="Exact filming location name filter.",
+    ),
     year: int | None = Query(
         None,
         ge=1900,
@@ -51,6 +63,8 @@ async def list_movies(
     """Thin API route handler for GET /api/v1/movies."""
     normalized_locations = await service.get_movie_locations(
         search=search,
+        title=title,
+        location=location,
         year=year,
         limit=limit,
         offset=offset,
