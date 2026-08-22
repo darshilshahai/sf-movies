@@ -193,6 +193,23 @@ We created a clean React + TypeScript frontend architecture connected to the Fas
 
 ---
 
+### Phase 9 — Interactive Leaflet Map
+
+#### What We Did:
+We replaced the temporary movie data preview with a fully interactive OpenStreetMap component using Leaflet and React Leaflet to map San Francisco film locations geographically.
+
+#### Key Highlights & Architecture:
+1. **Interactive Map Component (`MovieMap.tsx`):**
+   - Configured `MapContainer` with OpenStreetMap tile layer (`url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"`).
+   - Centered default view on San Francisco (`[37.7749, -122.4194]`, zoom level `12`).
+2. **Vite + Leaflet Asset Fix:** Reconfigured Leaflet default marker icon paths (`marker-icon.png`, `marker-icon-2x.png`, `marker-shadow.png`) to avoid broken asset URL issues in Vite bundling.
+3. **Marker & Popup Rendering:**
+   - Rendered markers dynamically at `[movie.coordinates.latitude, movie.coordinates.longitude]`.
+   - Popups display movie title, release year, location name, and director (hiding missing/null fields).
+4. **HomePage Integration:** Connected `useMovies({ limit: 500 })` to fetch San Francisco locations, displaying a live location count badge ("Showing X filming locations") alongside responsive map bounds.
+
+---
+
 ## 🧪 Testing & Quality Assurance Summary
 
 We maintain **100% automated test suite pass rate** across backend and frontend:
@@ -203,25 +220,25 @@ cd backend
 .venv/bin/pytest -v
 ```
 - **Coverage:** 56 tests across config, health, DataSF client, MovieService, movies API, and search API.
-- **Result:** `56 passed in 0.21s`
+- **Result:** `56 passed in 0.23s`
 
 ### Frontend Vitest Suite:
 ```bash
 cd frontend
 npm test
 ```
-- **Coverage:** 4 tests in `App.test.tsx` verifying loading state, data preview rendering, error state, and search API parameters.
-- **Result:** `4 passed in 0.58s`
+- **Coverage:** 4 tests in `App.test.tsx` verifying map loading, location count badge, success, error, and empty states.
+- **Result:** `4 passed in 0.62s`
 
 ### Production Build Verification:
 ```bash
 cd frontend
 npm run build
 ```
-- **Result:** `✓ built in 102ms` (0 TypeScript / ESLint errors).
+- **Result:** `✓ built in 130ms` (0 TypeScript / ESLint errors).
 
 ---
 
 ## 🚀 Next Steps
 
-We are ready to move on to **Phase 9**!
+We are ready to move on to **Phase 10**!

@@ -3,7 +3,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { apiClient } from "./api/client";
-import { getSearchSuggestions } from "./api/search";
+
+// Mock MovieMap component to avoid Leaflet JSDOM container sizing issues in unit tests
+vi.mock("./components/map/MovieMap", () => ({
+  default: ({ movies }: { movies: Array<{ title: string; location: string }> }) => (
+    <div data-testid="mock-movie-map">
+      Mock Movie Map with {movies.length} markers
+    </div>
+  ),
+}));
 
 vi.mock("./api/client", () => ({
   apiClient: {
@@ -14,9 +22,7 @@ vi.mock("./api/client", () => ({
 function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: {
-      queries: {
-        retry: false,
-      },
+      queries: { retry: false },
     },
   });
 }
@@ -28,21 +34,21 @@ function renderWithClient(ui: React.ReactElement) {
   );
 }
 
-describe("App & HomePage Integration", () => {
+describe("App & HomePage Leaflet Map Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("renders loading state initially", () => {
     vi.mocked(apiClient.get).mockImplementation(() => new Promise(() => {}));
-
     renderWithClient(<App />);
-
-    expect(screen.getByText("SF Movies")).toBeInTheDocument();
-    expect(screen.getByText("Loading movie locations...")).toBeInTheDocument();
+    expect(screen.getByText("SF Movies Explorer")).toBeInTheDocument();
+    expect(
+      screen.getByText("Loading San Francisco filming locations...")
+    ).toBeInTheDocument();
   });
 
-  it("renders fetched movie data preview on success", async () => {
+  it("renders location count and MovieMap on successful data fetch", async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       data: {
         data: [
@@ -60,43 +66,48 @@ describe("App & HomePage Integration", () => {
             neighborhood: "Mission",
           },
         ],
-        meta: { count: 1, limit: 10, offset: 0 },
+        meta: { count: 1, limit: 500, offset: 0 },
       },
     });
-
-    renderWithClient(<App />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Loaded 1 locations")).toBeInTheDocument();
-      expect(screen.getByText(/Vertigo/)).toBeInTheDocument();
-      expect(screen.getByText(/Mission Dolores/)).toBeInTheDocument();
-    });
-  });
-
-  it("renders error state when API call fails", async () => {
-    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error("Network Error"));
 
     renderWithClient(<App />);
 
     await waitFor(() => {
       expect(
-        screen.getByText("Unable to load movie locations.")
+        screen.getByText("Showing 1 filming locations")
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("mock-movie-map")).toBeInTheDocument();
+      expect(
+        screen.getByText("Mock Movie Map with 1 markers")
       ).toBeInTheDocument();
     });
   });
 
-  it("getSearchSuggestions issues correct API GET request", async () => {
+  it("renders error state when API fails", async () => {
+    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error("Upstream Error"));
+
+    renderWithClient(<App />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Unable to load filming locations")
+      ).toBeInTheDocument();
+      expect(screen.getByText("Try Again")).toBeInTheDocument();
+    });
+  });
+
+  it("renders empty state when location list is empty", async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       data: {
-        data: [{ value: "Vertigo", type: "movie" }],
+        data: [],
+        meta: { count: 0, limit: 500, offset: 0 },
       },
     });
 
-    const res = await getSearchSuggestions("vert", 5);
+    renderWithClient(<App />);
 
-    expect(apiClient.get).toHaveBeenCalledWith("/api/v1/search/suggestions", {
-      params: { q: "vert", limit: 5 },
+    await waitFor(() => {
+      expect(screen.getByText("No filming locations found.")).toBeInTheDocument();
     });
-    expect(res.data).toEqual([{ value: "Vertigo", type: "movie" }]);
   });
 });

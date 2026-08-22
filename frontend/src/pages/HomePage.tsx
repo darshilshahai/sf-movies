@@ -1,76 +1,79 @@
 import { useMovies } from "../hooks/useMovies";
+import MovieMap from "../components/map/MovieMap";
 
+/**
+ * Main application page integrating movie data fetching with the interactive Leaflet map.
+ */
 export default function HomePage() {
-  const { data, isLoading, isError } = useMovies({ limit: 10 });
+  const { data, isLoading, isError, refetch } = useMovies({ limit: 500 });
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 text-center">
-      <div className="max-w-md w-full space-y-6 bg-slate-900/80 p-6 rounded-xl border border-slate-800 shadow-xl">
-        <header className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight text-amber-400">
-            SF Movies
-          </h1>
-          <p className="text-slate-300 text-sm">
-            Discover where movies were filmed in San Francisco
-          </p>
-        </header>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-10 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-amber-400">
+              SF Movies Explorer
+            </h1>
+            <p className="text-xs text-slate-400">
+              Discover where movies were filmed across San Francisco
+            </p>
+          </div>
 
+          {!isLoading && !isError && data && (
+            <div className="flex items-center gap-2 self-start md:self-auto">
+              <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                Showing {data.meta.count} filming locations
+              </span>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col">
         {isLoading && (
-          <p className="text-slate-400 text-sm animate-pulse">
-            Loading movie locations...
-          </p>
+          <div className="flex-1 flex flex-col items-center justify-center py-24 space-y-4">
+            <div className="h-10 w-10 border-4 border-amber-400/20 border-t-amber-400 rounded-full animate-spin" />
+            <p className="text-slate-400 text-sm animate-pulse">
+              Loading San Francisco filming locations...
+            </p>
+          </div>
         )}
 
         {isError && (
-          <div className="p-4 rounded-lg bg-red-950/50 border border-red-800 text-red-300 text-sm">
-            Unable to load movie locations.
+          <div className="flex-1 flex flex-col items-center justify-center py-24 max-w-md mx-auto text-center space-y-4">
+            <div className="p-4 rounded-xl bg-red-950/40 border border-red-800/80 text-red-300 text-sm space-y-2">
+              <p className="font-semibold text-base text-red-200">
+                Unable to load filming locations
+              </p>
+              <p className="text-xs text-red-300/80">
+                We couldn't retrieve movie data from the backend server.
+              </p>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors shadow-lg"
+            >
+              Try Again
+            </button>
           </div>
         )}
 
         {!isLoading && !isError && data && (
-          <div className="space-y-4 text-left">
-            <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-2">
-              <span className="text-emerald-400 font-medium flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                Backend Connected
-              </span>
-              <span>Loaded {data.meta.count} locations</span>
-            </div>
-
+          <>
             {data.data.length === 0 ? (
-              <p className="text-slate-400 text-sm text-center py-4">
-                No movie locations found.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Sample Data Preview
-                </h2>
-                <ul className="space-y-2 text-sm">
-                  {data.data.slice(0, 5).map((movie, idx) => (
-                    <li
-                      key={`${movie.title}-${movie.location}-${idx}`}
-                      className="p-2.5 rounded bg-slate-800/60 border border-slate-700/50 flex flex-col"
-                    >
-                      <span className="font-semibold text-amber-300">
-                        {movie.title}{" "}
-                        {movie.release_year && (
-                          <span className="text-xs font-normal text-slate-400">
-                            ({movie.release_year})
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-xs text-slate-300 truncate">
-                        📍 {movie.location}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex-1 flex items-center justify-center py-24">
+                <p className="text-slate-400 text-sm">
+                  No filming locations found.
+                </p>
               </div>
+            ) : (
+              <MovieMap movies={data.data} />
             )}
-          </div>
+          </>
         )}
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
