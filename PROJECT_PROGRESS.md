@@ -227,6 +227,26 @@ We extracted a dedicated, presentational `MoviePopup` component to display struc
 
 ---
 
+### Phase 11 — Search & Autocomplete UI
+
+#### What We Did:
+We built an accessible, keyboard-navigable search autocomplete component (`SearchAutocomplete.tsx`) powered by a custom 300ms input debouncing hook (`useDebounce.ts`) and TanStack Query suggestions hook (`useSearchSuggestions.ts`).
+
+#### Key Highlights & Architecture:
+1. **300ms Input Debouncing (`useDebounce.ts`):** Prevents rapid keystrokes from firing unnecessary network queries. API calls trigger only when debounced query length >= 2 characters.
+2. **Search Autocomplete Component (`SearchAutocomplete.tsx`):**
+   - Prominent search input with `Search` icon and clear button (`X`).
+   - Discriminated suggestions list displaying movie (`Clapperboard` icon) and location (`MapPin` icon) items.
+   - Outside click dismissal via `useRef` and `useEffect` event listener.
+   - High `z-50` z-index context ensuring dropdown renders smoothly above Leaflet map.
+3. **Full Keyboard Navigation:**
+   - `ArrowDown` & `ArrowUp` for option highlighting.
+   - `Enter` key to confirm selection.
+   - `Escape` key to close dropdown.
+4. **WAI-ARIA Accessibility:** Implemented `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`, `role="listbox"`, and `role="option"` with `aria-selected` attributes.
+
+---
+
 ## 🧪 Testing & Quality Assurance Summary
 
 We maintain **100% automated test suite pass rate** across backend and frontend:
@@ -237,25 +257,25 @@ cd backend
 .venv/bin/pytest -v
 ```
 - **Coverage:** 56 tests across config, health, DataSF client, MovieService, movies API, and search API.
-- **Result:** `56 passed in 0.20s`
+- **Result:** `56 passed in 0.22s`
 
 ### Frontend Vitest Suite:
 ```bash
 cd frontend
 npm test
 ```
-- **Coverage:** 6 tests across `App.test.tsx` and `MoviePopup.test.tsx` verifying map rendering, metadata formatting, bullet cast list, and conditional null-hiding.
-- **Result:** `6 passed in 0.67s`
+- **Coverage:** 15 tests across `App.test.tsx`, `MoviePopup.test.tsx`, and `SearchAutocomplete.test.tsx` (testing debouncing, minimum query length, mouse click selection, keyboard navigation, clear button, and empty/error dropdown states).
+- **Result:** `15 passed in 2.79s`
 
 ### Production Build Verification:
 ```bash
 cd frontend
 npm run build
 ```
-- **Result:** `✓ built in 180ms` (0 TypeScript / ESLint errors).
+- **Result:** `✓ built in 200ms` (0 TypeScript / ESLint errors).
 
 ---
 
 ## 🚀 Next Steps
 
-We are ready to move on to **Phase 11**!
+We are ready to move on to **Phase 12**!
