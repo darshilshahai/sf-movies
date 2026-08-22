@@ -301,3 +301,172 @@ def test_soql_where_construction():
     # Case E: Quote escaping (e.g. O'Brien -> o''brien)
     where_quote = service._build_soql_where(search="O'Brien")
     assert "o''brien" in where_quote
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_movie_title_match():
+    """Test 15: Autocomplete returns movie title match."""
+    raw_data = [{"title": "Vertigo", "locations": "Mission Dolores"}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="vert")
+
+    assert len(suggestions) == 1
+    assert suggestions[0].value == "Vertigo"
+    assert suggestions[0].type == "movie"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_location_match():
+    """Test 16: Autocomplete returns filming location match."""
+    raw_data = [{"title": "Movie A", "locations": "Golden Gate Bridge"}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="gate")
+
+    assert len(suggestions) == 1
+    assert suggestions[0].value == "Golden Gate Bridge"
+    assert suggestions[0].type == "location"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_duplicate_movie_titles():
+    """Test 17: Autocomplete deduplicates identical movie titles."""
+    raw_data = [
+        {"title": "Vertigo", "locations": "Mission Dolores"},
+        {"title": "Vertigo", "locations": "Palace of Fine Arts"},
+        {"title": "Vertigo", "locations": "Coit Tower"},
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="vert")
+
+    movie_suggestions = [s for s in suggestions if s.type == "movie"]
+    assert len(movie_suggestions) == 1
+    assert movie_suggestions[0].value == "Vertigo"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_duplicate_locations():
+    """Test 18: Autocomplete deduplicates identical locations across different movies."""
+    raw_data = [
+        {"title": "Movie A", "locations": "Golden Gate Bridge"},
+        {"title": "Movie B", "locations": "Golden Gate Bridge"},
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="gate")
+
+    location_suggestions = [s for s in suggestions if s.type == "location"]
+    assert len(location_suggestions) == 1
+    assert location_suggestions[0].value == "Golden Gate Bridge"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_case_insensitive_duplicates():
+    """Test 19: Autocomplete deduplicates case-insensitively and preserves first clean casing."""
+    raw_data = [
+        {"title": "Movie A", "locations": "Golden Gate Bridge"},
+        {"title": "Movie B", "locations": "golden gate bridge"},
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="gate")
+
+    location_suggestions = [s for s in suggestions if s.type == "location"]
+    assert len(location_suggestions) == 1
+    assert location_suggestions[0].value == "Golden Gate Bridge"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_missing_location():
+    """Test 20: Autocomplete safely ignores missing/null filming locations."""
+    raw_data = [{"title": "Vertigo", "locations": None}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="vert")
+
+    assert len(suggestions) == 1
+    assert suggestions[0].value == "Vertigo"
+    assert suggestions[0].type == "movie"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_missing_title():
+    """Test 21: Autocomplete safely ignores missing/null movie titles."""
+    raw_data = [{"title": None, "locations": "Golden Gate Park"}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="park")
+
+    assert len(suggestions) == 1
+    assert suggestions[0].value == "Golden Gate Park"
+    assert suggestions[0].type == "location"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_empty_result():
+    """Test 22: Autocomplete returns empty list when DataSF returns no records."""
+    service = MovieService(datasf_client=FakeDataSFClient(records=[]))
+
+    suggestions = await service.get_search_suggestions(query="nonexistent")
+
+    assert suggestions == []
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_ranking_prefix_over_contains():
+    """Test 23: Prefix matches rank higher than contains matches."""
+    raw_data = [
+        {"title": "The Making of Vertigo", "locations": "Studio"},
+        {"title": "Vertigo", "locations": "Mission Dolores"},
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="vert")
+
+    movie_values = [s.value for s in suggestions if s.type == "movie"]
+    assert movie_values == ["Vertigo", "The Making of Vertigo"]
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_limit_enforcement():
+    """Test 24: Autocomplete caps suggestions to specified limit."""
+    raw_data = [
+        {"title": f"Movie {i}", "locations": f"Location {i}"}
+        for i in range(20)
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="movie", limit=5)
+
+    assert len(suggestions) == 5
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_upstream_exception():
+    """Test 25: Upstream DataSF exceptions are preserved and re-raised."""
+    client = FakeDataSFClient(
+        raise_exc=UpstreamServiceException(
+            code="UPSTREAM_SERVICE_ERROR", message="DataSF connection failed"
+        )
+    )
+    service = MovieService(datasf_client=client)
+
+    with pytest.raises(UpstreamServiceException) as exc_info:
+        await service.get_search_suggestions(query="vert")
+
+    assert exc_info.value.code == "UPSTREAM_SERVICE_ERROR"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_special_character_query():
+    """Test 26: Queries with special characters like apostrophes are handled safely."""
+    raw_data = [{"title": "O'Brien's Tower", "locations": "O'Brien Place"}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="O'Brien")
+
+    assert len(suggestions) >= 1
+    assert any("O'Brien" in s.value for s in suggestions)
+

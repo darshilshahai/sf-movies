@@ -1,8 +1,9 @@
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from app.clients.datasf import DataSFClient
 from app.schemas.movie import Coordinates, MovieLocation
+from app.schemas.search import SearchSuggestion
 
 logger = logging.getLogger("sf_movies.movie_service")
 
@@ -165,3 +166,70 @@ class MovieService:
             f"output_normalized={len(normalized_locations)} search='{search}' year={year}"
         )
         return normalized_locations
+
+    async def get_search_suggestions(
+        self,
+        *,
+        query: str,
+        limit: int = 8,
+    ) -> list[SearchSuggestion]:
+        """
+        Retrieves case-insensitive, deduplicated, and ranked autocomplete suggestions for titles and locations.
+
+        :param query: Search query string (minimum 2 characters).
+        :param limit: Maximum number of suggestions to return (default: 8).
+        :return: List of SearchSuggestion domain objects.
+        """
+        trimmed_query = query.strip()
+        if len(trimmed_query) < 2:
+            return []
+
+        soql_where = self._build_soql_where(search=trimmed_query)
+
+        # Fetch up to 50 raw records from DataSF to ensure sufficient sample for deduplication
+        raw_records = await self._datasf_client.get_film_locations(
+            limit=50,
+            offset=0,
+            where=soql_where,
+        )
+
+        q_lower = trimmed_query.lower()
+        candidates: list[tuple[int, str, Literal["movie", "location"]]] = []
+        seen_keys: set[tuple[str, str]] = set()
+
+        for raw in raw_records:
+            title = self._normalize_string(raw.get("title"))
+            location = self._normalize_string(raw.get("locations"))
+
+            # Evaluate Title candidate
+            if title and q_lower in title.lower():
+                dedup_key = (title.lower(), "movie")
+                if dedup_key not in seen_keys:
+                    seen_keys.add(dedup_key)
+                    # Rank 1: Movie Title prefix match; Rank 3: Movie Title contains match
+                    rank = 1 if title.lower().startswith(q_lower) else 3
+                    candidates.append((rank, title, "movie"))
+
+            # Evaluate Location candidate
+            if location and q_lower in location.lower():
+                dedup_key = (location.lower(), "location")
+                if dedup_key not in seen_keys:
+                    seen_keys.add(dedup_key)
+                    # Rank 2: Location prefix match; Rank 4: Location contains match
+                    rank = 2 if location.lower().startswith(q_lower) else 4
+                    candidates.append((rank, location, "location"))
+
+        # Sort candidate suggestions by rank ascending, preserving discovery order for ties
+        candidates.sort(key=lambda item: item[0])
+
+        suggestions = [
+            SearchSuggestion(value=value, type=stype)
+            for _, value, stype in candidates[:limit]
+        ]
+
+        logger.info(
+            f"search_suggestions_returned query='{trimmed_query}' "
+            f"raw_records={len(raw_records)} suggestions_count={len(suggestions)}"
+        )
+        return suggestions
+

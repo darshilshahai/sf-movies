@@ -152,26 +152,54 @@ We exposed `MovieService` through a clean, RESTful API endpoint: `GET /api/v1/mo
 
 ---
 
+### Phase 7 — Autocomplete Search API
+
+#### What We Did:
+We built a fast, case-insensitive, deduplicated, and ranked autocomplete search API endpoint `GET /api/v1/search/suggestions`.
+
+#### Key Highlights & Architecture:
+1. **Endpoint Contract:** `GET /api/v1/search/suggestions?q=<query>&limit=<limit>`
+   - `q`: Required query string (min length 2, max length 100). Whitespace trimmed automatically.
+   - `limit`: Result count cap (default 8, min 1, max 15).
+2. **Clean Discriminated Schema (`SearchSuggestion`):**
+   ```json
+   {
+     "data": [
+       { "value": "Vertigo", "type": "movie" },
+       { "value": "Golden Gate Bridge", "type": "location" }
+     ]
+   }
+   ```
+3. **Upstream Filtering & Deterministic Ranking:**
+   - Filters upstream in DataSF using SoQL `lower(title) like '%q%' or lower(locations) like '%q%'`.
+   - Ranks prefix matches above contains matches.
+   - Prioritizes movie titles over locations when match relevance score is equal.
+4. **Case-Insensitive Deduplication:** Identical movie titles or filming location names are deduplicated efficiently using candidate sets while preserving original casing.
+5. **Resilient Error Propagation:** Empty search results return `200 OK` with `{"data": []}`, while upstream DataSF network errors preserve exception details to return structured `502 Bad Gateway` error envelopes.
+
+---
+
 ## 🧪 Testing & Quality Assurance Summary
 
 We maintain **100% automated test suite pass rate**:
 
 ```bash
 cd backend
-uv run pytest -v
+.venv/bin/pytest -v
 ```
 
 ### Test Coverage:
 - **`tests/test_config.py`**: Settings loading tests.
 - **`tests/test_health.py`**: Health endpoint check tests.
-- **`tests/test_datasf_client.py`**: 8 client transport tests (success, empty payload, 500 error, timeout, network failure, invalid JSON, unexpected shape, query params).
-- **`tests/test_movie_service.py`**: 14 service normalization tests (valid mapping, optional fields, missing coords, invalid lat/lng, out-of-bounds coords, missing title/location, actor cleanup, exception propagation, mixed rows, deduplication, SoQL query builder).
-- **`tests/test_movies_api.py`**: 10 route integration tests (200 OK envelope, pagination params, search param, year param, empty 200 OK, limit validation ge/le, offset validation, search max length, 502 error propagation).
+- **`tests/test_datasf_client.py`**: 8 client transport tests.
+- **`tests/test_movie_service.py`**: 26 service normalization and autocomplete tests (title match, location match, duplicate titles/locations, case-insensitivity, missing values, empty results, prefix ranking, limits, upstream exceptions, special character escaping).
+- **`tests/test_movies_api.py`**: 10 movie list route integration tests.
+- **`tests/test_search_api.py`**: 10 autocomplete search route integration tests (200 OK success, missing query 422, query too short 422, query too long 422, custom limit, invalid limit 0 and >15 422, empty 200 OK, upstream 502 propagation, trimmed short query).
 
-**Result:** `34 passed in 0.33s`
+**Result:** `56 passed in 0.15s`
 
 ---
 
 ## 🚀 Next Steps
 
-We are ready to move on to **Phase 7**!
+We are ready to move on to **Phase 8**!
