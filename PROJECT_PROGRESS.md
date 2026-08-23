@@ -312,8 +312,8 @@ We maintain **100% automated test suite pass rate** across backend and frontend:
 cd backend
 .venv/bin/pytest -v
 ```
-- **Coverage:** 60 tests across config, health, DataSF client, MovieService, movies API, and search API.
-- **Result:** `60 passed in 0.23s`
+- **Coverage:** 62 tests across config, health, openapi/docs availability, DataSF client, MovieService, movies API, and search API.
+- **Result:** `62 passed in 0.22s`
 
 ### Frontend Vitest Suite:
 ```bash

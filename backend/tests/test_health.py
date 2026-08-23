@@ -11,3 +11,14 @@ def test_health_check():
         "status": "healthy",
         "service": "sf-movies-api"
     }
+
+
+def test_openapi_schema_is_available():
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    assert "openapi" in response.json()
+
+
+def test_docs_is_available():
+    response = client.get("/docs")
+    assert response.status_code == 200
