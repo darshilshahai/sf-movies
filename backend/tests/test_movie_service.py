@@ -5,8 +5,6 @@ from app.services.movie_service import MovieService
 
 
 class FakeDataSFClient(DataSFClient):
-    """Fake DataSF client for isolated unit testing."""
-
     def __init__(self, records: list[dict] | None = None, raise_exc: Exception | None = None) -> None:
         super().__init__()
         self._records = records or []
@@ -20,7 +18,6 @@ class FakeDataSFClient(DataSFClient):
 
 @pytest.mark.asyncio
 async def test_normalize_valid_record():
-    """Test 1: Full valid raw DataSF record is transformed into a clean MovieLocation model."""
     raw_data = [
         {
             "title": "Vertigo",
@@ -61,7 +58,6 @@ async def test_normalize_valid_record():
 
 @pytest.mark.asyncio
 async def test_missing_optional_fields():
-    """Test 2: Record with only required map attributes normalizes optional fields to None."""
     raw_data = [
         {
             "title": "Milk",
@@ -85,7 +81,6 @@ async def test_missing_optional_fields():
 
 @pytest.mark.asyncio
 async def test_missing_latitude():
-    """Test 3: Record missing latitude is skipped."""
     raw_data = [
         {
             "title": "Desperate Measures",
@@ -101,7 +96,6 @@ async def test_missing_latitude():
 
 @pytest.mark.asyncio
 async def test_missing_longitude():
-    """Test 4: Record missing longitude is skipped."""
     raw_data = [
         {
             "title": "Desperate Measures",
@@ -117,7 +111,6 @@ async def test_missing_longitude():
 
 @pytest.mark.asyncio
 async def test_invalid_latitude():
-    """Test 5: Record with non-numeric latitude string is skipped."""
     raw_data = [
         {
             "title": "Bad Record",
@@ -134,7 +127,6 @@ async def test_invalid_latitude():
 
 @pytest.mark.asyncio
 async def test_invalid_coordinate_range():
-    """Test 6: Coordinates out of valid WGS84 range (-90 to 90 lat, -180 to 180 lng) are rejected."""
     raw_data = [
         {
             "title": "Out of Bounds",
@@ -151,7 +143,6 @@ async def test_invalid_coordinate_range():
 
 @pytest.mark.asyncio
 async def test_missing_title():
-    """Test 7: Record with missing title is skipped."""
     raw_data = [
         {
             "locations": "Lombard Street",
@@ -167,7 +158,6 @@ async def test_missing_title():
 
 @pytest.mark.asyncio
 async def test_missing_location():
-    """Test 8: Record with missing location description is skipped."""
     raw_data = [
         {
             "title": "Untitled Filming",
@@ -183,7 +173,6 @@ async def test_missing_location():
 
 @pytest.mark.asyncio
 async def test_invalid_release_year():
-    """Test 9: Invalid release year is converted to None without rejecting the record."""
     raw_data = [
         {
             "title": "The Rock",
@@ -204,7 +193,6 @@ async def test_invalid_release_year():
 
 @pytest.mark.asyncio
 async def test_actor_cleanup_and_deduplication():
-    """Test 10: Actor names are trimmed, empty values ignored, and duplicates removed."""
     raw_data = [
         {
             "title": "Zodiac",
@@ -226,7 +214,6 @@ async def test_actor_cleanup_and_deduplication():
 
 @pytest.mark.asyncio
 async def test_upstream_exception_propagation():
-    """Test 11: Upstream errors from DataSFClient propagate without being swallowed as []."""
     service = MovieService(
         datasf_client=FakeDataSFClient(
             raise_exc=UpstreamServiceException(
@@ -244,12 +231,11 @@ async def test_upstream_exception_propagation():
 
 @pytest.mark.asyncio
 async def test_mixed_valid_and_invalid_rows():
-    """Test 12: Mixed list with 3 valid and 2 malformed records returns 3 valid records."""
     raw_data = [
         {"title": "Valid 1", "locations": "Loc 1", "latitude": "37.77", "longitude": "-122.41"},
-        {"title": "Bad 1", "locations": "Loc 2"},  # missing coords
+        {"title": "Bad 1", "locations": "Loc 2"},
         {"title": "Valid 2", "locations": "Loc 3", "latitude": "37.78", "longitude": "-122.42"},
-        {"locations": "Loc 4", "latitude": "37.79", "longitude": "-122.43"},  # missing title
+        {"locations": "Loc 4", "latitude": "37.79", "longitude": "-122.43"},
         {"title": "Valid 3", "locations": "Loc 5", "latitude": "37.80", "longitude": "-122.44"},
     ]
 
@@ -263,7 +249,6 @@ async def test_mixed_valid_and_invalid_rows():
 
 @pytest.mark.asyncio
 async def test_exact_duplicate_deduplication():
-    """Test 13: Identical movie location records are deduplicated."""
     raw_data = [
         {"title": "Milk", "locations": "Castro", "latitude": "37.76", "longitude": "-122.43"},
         {"title": "Milk", "locations": "Castro", "latitude": "37.76", "longitude": "-122.43"},
@@ -274,3 +259,220 @@ async def test_exact_duplicate_deduplication():
 
     assert len(result) == 1
     assert result[0].title == "Milk"
+
+
+def test_soql_where_construction():
+    service = MovieService(datasf_client=FakeDataSFClient())
+
+
+    assert service._build_soql_where() is None
+
+
+    where_search = service._build_soql_where(search="vertigo")
+    assert where_search == "(lower(title) like '%vertigo%' or lower(locations) like '%vertigo%')"
+
+
+    where_year = service._build_soql_where(year=1958)
+    assert where_year == "release_year = '1958'"
+
+
+    where_combined = service._build_soql_where(search="vertigo", year=1958)
+    assert (
+        where_combined
+        == "(lower(title) like '%vertigo%' or lower(locations) like '%vertigo%') and release_year = '1958'"
+    )
+
+
+    where_quote = service._build_soql_where(search="O'Brien")
+    assert "o''brien" in where_quote
+
+
+    where_title = service._build_soql_where(title="Vertigo")
+    assert where_title == "lower(title) = 'vertigo'"
+
+
+    where_location = service._build_soql_where(location="Golden Gate Bridge")
+    assert where_location == "lower(locations) = 'golden gate bridge'"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_movie_title_match():
+    raw_data = [{"title": "Vertigo", "locations": "Mission Dolores"}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="vert")
+
+    assert len(suggestions) == 1
+    assert suggestions[0].value == "Vertigo"
+    assert suggestions[0].type == "movie"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_location_match():
+    raw_data = [{"title": "Movie A", "locations": "Golden Gate Bridge"}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="gate")
+
+    assert len(suggestions) == 1
+    assert suggestions[0].value == "Golden Gate Bridge"
+    assert suggestions[0].type == "location"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_duplicate_movie_titles():
+    raw_data = [
+        {"title": "Vertigo", "locations": "Mission Dolores"},
+        {"title": "Vertigo", "locations": "Palace of Fine Arts"},
+        {"title": "Vertigo", "locations": "Coit Tower"},
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="vert")
+
+    movie_suggestions = [s for s in suggestions if s.type == "movie"]
+    assert len(movie_suggestions) == 1
+    assert movie_suggestions[0].value == "Vertigo"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_duplicate_locations():
+    raw_data = [
+        {"title": "Movie A", "locations": "Golden Gate Bridge"},
+        {"title": "Movie B", "locations": "Golden Gate Bridge"},
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="gate")
+
+    location_suggestions = [s for s in suggestions if s.type == "location"]
+    assert len(location_suggestions) == 1
+    assert location_suggestions[0].value == "Golden Gate Bridge"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_case_insensitive_duplicates():
+    raw_data = [
+        {"title": "Movie A", "locations": "Golden Gate Bridge"},
+        {"title": "Movie B", "locations": "golden gate bridge"},
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="gate")
+
+    location_suggestions = [s for s in suggestions if s.type == "location"]
+    assert len(location_suggestions) == 1
+    assert location_suggestions[0].value == "Golden Gate Bridge"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_missing_location():
+    raw_data = [{"title": "Vertigo", "locations": None}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="vert")
+
+    assert len(suggestions) == 1
+    assert suggestions[0].value == "Vertigo"
+    assert suggestions[0].type == "movie"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_missing_title():
+    raw_data = [{"title": None, "locations": "Golden Gate Park"}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="park")
+
+    assert len(suggestions) == 1
+    assert suggestions[0].value == "Golden Gate Park"
+    assert suggestions[0].type == "location"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_empty_result():
+    service = MovieService(datasf_client=FakeDataSFClient(records=[]))
+
+    suggestions = await service.get_search_suggestions(query="nonexistent")
+
+    assert suggestions == []
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_ranking_prefix_over_contains():
+    raw_data = [
+        {"title": "The Making of Vertigo", "locations": "Studio"},
+        {"title": "Vertigo", "locations": "Mission Dolores"},
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="vert")
+
+    movie_values = [s.value for s in suggestions if s.type == "movie"]
+    assert movie_values == ["Vertigo", "The Making of Vertigo"]
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_limit_enforcement():
+    raw_data = [
+        {"title": f"Movie {i}", "locations": f"Location {i}"}
+        for i in range(20)
+    ]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="movie", limit=5)
+
+    assert len(suggestions) == 5
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_upstream_exception():
+    client = FakeDataSFClient(
+        raise_exc=UpstreamServiceException(
+            code="UPSTREAM_SERVICE_ERROR", message="DataSF connection failed"
+        )
+    )
+    service = MovieService(datasf_client=client)
+
+    with pytest.raises(UpstreamServiceException) as exc_info:
+        await service.get_search_suggestions(query="vert")
+
+    assert exc_info.value.code == "UPSTREAM_SERVICE_ERROR"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_special_character_query():
+    raw_data = [{"title": "O'Brien's Tower", "locations": "O'Brien Place"}]
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+
+    suggestions = await service.get_search_suggestions(query="O'Brien")
+
+    assert len(suggestions) >= 1
+    assert any("O'Brien" in s.value for s in suggestions)
+
+
+@pytest.mark.asyncio
+async def test_coordinate_exact_boundary_values():
+    raw_data = [
+        {
+            "title": "North Pole Movie",
+            "locations": "Arctic Center",
+            "latitude": "90.0",
+            "longitude": "-180.0",
+        },
+        {
+            "title": "South Pole Movie",
+            "locations": "Antarctic Base",
+            "latitude": "-90.0",
+            "longitude": "180.0",
+        },
+    ]
+
+    service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
+    result = await service.get_movie_locations()
+
+    assert len(result) == 2
+    assert result[0].coordinates.latitude == 90.0
+    assert result[0].coordinates.longitude == -180.0
+    assert result[1].coordinates.latitude == -90.0
+    assert result[1].coordinates.longitude == 180.0

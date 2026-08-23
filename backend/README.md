@@ -2,16 +2,25 @@
 
 FastAPI backend abstraction over the DataSF Film Locations API (`yitu-d5am`).
 
-## Setup & Running
+## Setup & Running with `uv`
 
 ```bash
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+# Sync dependencies & create virtual environment
+uv sync
 
 # Run development server
-uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 8000
 ```
+
+## Running Tests
+
+```bash
+uv run pytest
+```
+
+## Deployment (Render)
+
+- **Root Directory**: `backend`
+- **Build Command**: `uv sync`
+- **Start Command**: `.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+

@@ -6,7 +6,6 @@ from app.core.exceptions import UpstreamServiceException, UpstreamTimeoutExcepti
 
 @pytest.mark.asyncio
 async def test_get_film_locations_success():
-    """Test 1: Successful request returns list of raw record dictionaries."""
     mock_payload = [
         {
             "title": "Vertigo",
@@ -32,8 +31,6 @@ async def test_get_film_locations_success():
 
 @pytest.mark.asyncio
 async def test_get_film_locations_empty():
-    """Test 2: Empty result list is returned successfully without raising error."""
-
     def transport_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json=[])
 
@@ -46,8 +43,6 @@ async def test_get_film_locations_empty():
 
 @pytest.mark.asyncio
 async def test_get_film_locations_upstream_500():
-    """Test 3: Upstream 500 server error raises UpstreamServiceException."""
-
     def transport_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(500, text="Internal Server Error")
 
@@ -63,8 +58,6 @@ async def test_get_film_locations_upstream_500():
 
 @pytest.mark.asyncio
 async def test_get_film_locations_timeout():
-    """Test 4: Timeout raises UpstreamTimeoutException."""
-
     def transport_handler(request: httpx.Request) -> httpx.Response:
         raise httpx.TimeoutException("Request timed out", request=request)
 
@@ -80,8 +73,6 @@ async def test_get_film_locations_timeout():
 
 @pytest.mark.asyncio
 async def test_get_film_locations_network_failure():
-    """Test 5: Network connection failure raises UpstreamServiceException."""
-
     def transport_handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("Connection refused", request=request)
 
@@ -97,8 +88,6 @@ async def test_get_film_locations_network_failure():
 
 @pytest.mark.asyncio
 async def test_get_film_locations_invalid_json():
-    """Test 6: Invalid JSON response raises UpstreamServiceException."""
-
     def transport_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, text="<html>502 Bad Gateway</html>")
 
@@ -114,8 +103,6 @@ async def test_get_film_locations_invalid_json():
 
 @pytest.mark.asyncio
 async def test_get_film_locations_invalid_shape():
-    """Test 7: Unexpected response shape (JSON object instead of list) raises UpstreamServiceException."""
-
     def transport_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"error": "Invalid query"})
 
@@ -131,7 +118,6 @@ async def test_get_film_locations_invalid_shape():
 
 @pytest.mark.asyncio
 async def test_get_film_locations_query_params():
-    """Test 8: Query parameters ($limit, $offset, $where, $order, $q) are passed correctly."""
     recorded_url = None
 
     def transport_handler(request: httpx.Request) -> httpx.Response:
@@ -150,9 +136,23 @@ async def test_get_film_locations_query_params():
         q="vertigo",
     )
 
-    assert recorded_url is not None
     assert recorded_url.params["$limit"] == "25"
     assert recorded_url.params["$offset"] == "50"
     assert recorded_url.params["$where"] == "release_year > 2000"
     assert recorded_url.params["$order"] == "release_year DESC"
     assert recorded_url.params["$q"] == "vertigo"
+
+
+@pytest.mark.asyncio
+async def test_get_film_locations_upstream_http_403_404():
+    def transport_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403, text="Forbidden")
+
+    mock_client = httpx.AsyncClient(transport=httpx.MockTransport(transport_handler))
+    datasf_client = DataSFClient(client=mock_client)
+
+    with pytest.raises(UpstreamServiceException) as exc_info:
+        await datasf_client.get_film_locations()
+
+    assert exc_info.value.code == "UPSTREAM_SERVICE_ERROR"
+    assert exc_info.value.status_code == 502

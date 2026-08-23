@@ -1,27 +1,24 @@
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from app.clients.datasf import DataSFClient
 from app.schemas.movie import Coordinates, MovieLocation
+from app.schemas.search import SearchSuggestion
 
 logger = logging.getLogger("sf_movies.movie_service")
 
 
 class MovieService:
-    """Service layer for fetching, normalizing, and filtering DataSF film locations."""
-
     def __init__(self, datasf_client: DataSFClient) -> None:
         self._datasf_client = datasf_client
 
     def _normalize_string(self, value: Any) -> str | None:
-        """Trims leading/trailing whitespace and converts empty strings or None to None."""
         if value is None:
             return None
         s_val = str(value).strip()
         return s_val if s_val else None
 
     def _parse_coordinates(self, record: dict[str, Any]) -> Coordinates | None:
-        """Parses and validates geographic coordinates from raw record fields."""
         raw_lat = record.get("latitude")
         raw_lng = record.get("longitude")
 
@@ -40,7 +37,6 @@ class MovieService:
         return Coordinates(latitude=lat, longitude=lng)
 
     def _parse_release_year(self, record: dict[str, Any]) -> int | None:
-        """Parses release year string to integer safely."""
         raw_year = record.get("release_year")
         if not raw_year:
             return None
@@ -50,7 +46,6 @@ class MovieService:
             return None
 
     def _parse_actors(self, record: dict[str, Any]) -> list[str]:
-        """Extracts, cleans, and deduplicates actor fields into a list."""
         actors: list[str] = []
         for key in ("actor_1", "actor_2", "actor_3"):
             normalized = self._normalize_string(record.get(key))
@@ -58,8 +53,43 @@ class MovieService:
                 actors.append(normalized)
         return actors
 
+    def _build_soql_where(
+        self,
+        search: str | None = None,
+        title: str | None = None,
+        location: str | None = None,
+        year: int | None = None,
+    ) -> str | None:
+
+
+        clauses: list[str] = []
+
+        if title:
+            escaped_title = title.strip().replace("'", "''").lower()
+            if escaped_title:
+                clauses.append(f"lower(title) = '{escaped_title}'")
+
+        if location:
+            escaped_location = location.strip().replace("'", "''").lower()
+            if escaped_location:
+                clauses.append(f"lower(locations) = '{escaped_location}'")
+
+        if search:
+            escaped_search = search.strip().replace("'", "''").lower()
+            if escaped_search:
+                clauses.append(
+                    f"(lower(title) like '%{escaped_search}%' or lower(locations) like '%{escaped_search}%')"
+                )
+
+        if year is not None:
+            clauses.append(f"release_year = '{year}'")
+
+        if not clauses:
+            return None
+
+        return " and ".join(clauses)
+
     def normalize_record(self, record: dict[str, Any]) -> MovieLocation | None:
-        """Normalizes a single raw DataSF record into a MovieLocation model, returning None if unusable."""
         title = self._normalize_string(record.get("title"))
         if not title:
             logger.warning("movie_record_skipped reason=missing_title")
@@ -94,24 +124,23 @@ class MovieService:
     async def get_movie_locations(
         self,
         *,
+        search: str | None = None,
+        title: str | None = None,
+        location: str | None = None,
+        year: int | None = None,
         limit: int = 100,
         offset: int = 0,
-        where: str | None = None,
-        order: str | None = None,
-        q: str | None = None,
     ) -> list[MovieLocation]:
-        """
-        Fetches raw records from DataSFClient and transforms them into normalized MovieLocation objects.
 
-        Unusable records (missing title, location, or coordinates) are safely skipped.
-        Exact duplicates within the batch are deduplicated.
-        """
+
+        soql_where = self._build_soql_where(
+            search=search, title=title, location=location, year=year
+        )
+
         raw_records = await self._datasf_client.get_film_locations(
             limit=limit,
             offset=offset,
-            where=where,
-            order=order,
-            q=q,
+            where=soql_where,
         )
 
         normalized_locations: list[MovieLocation] = []
@@ -136,6 +165,68 @@ class MovieService:
             normalized_locations.append(item)
 
         logger.info(
-            f"movie_transformation_completed input_raw={len(raw_records)} output_normalized={len(normalized_locations)}"
+            f"movie_transformation_completed input_raw={len(raw_records)} "
+            f"output_normalized={len(normalized_locations)} search='{search}' year={year}"
         )
         return normalized_locations
+
+    async def get_search_suggestions(
+        self,
+        *,
+        query: str,
+        limit: int = 8,
+    ) -> list[SearchSuggestion]:
+
+
+        trimmed_query = query.strip()
+        if len(trimmed_query) < 2:
+            return []
+
+        soql_where = self._build_soql_where(search=trimmed_query)
+
+
+        raw_records = await self._datasf_client.get_film_locations(
+            limit=50,
+            offset=0,
+            where=soql_where,
+        )
+
+        q_lower = trimmed_query.lower()
+        candidates: list[tuple[int, str, Literal["movie", "location"]]] = []
+        seen_keys: set[tuple[str, str]] = set()
+
+        for raw in raw_records:
+            title = self._normalize_string(raw.get("title"))
+            location = self._normalize_string(raw.get("locations"))
+
+
+            if title and q_lower in title.lower():
+                dedup_key = (title.lower(), "movie")
+                if dedup_key not in seen_keys:
+                    seen_keys.add(dedup_key)
+
+                    rank = 1 if title.lower().startswith(q_lower) else 3
+                    candidates.append((rank, title, "movie"))
+
+
+            if location and q_lower in location.lower():
+                dedup_key = (location.lower(), "location")
+                if dedup_key not in seen_keys:
+                    seen_keys.add(dedup_key)
+
+                    rank = 2 if location.lower().startswith(q_lower) else 4
+                    candidates.append((rank, location, "location"))
+
+
+        candidates.sort(key=lambda item: item[0])
+
+        suggestions = [
+            SearchSuggestion(value=value, type=stype)
+            for _, value, stype in candidates[:limit]
+        ]
+
+        logger.info(
+            f"search_suggestions_returned query='{trimmed_query}' "
+            f"raw_records={len(raw_records)} suggestions_count={len(suggestions)}"
+        )
+        return suggestions

@@ -6,8 +6,6 @@ logger = logging.getLogger("sf_movies.exceptions")
 
 
 class AppException(Exception):
-    """Base custom application exception for handled domain and operational errors."""
-
     def __init__(
         self,
         code: str,
@@ -21,8 +19,6 @@ class AppException(Exception):
 
 
 class UpstreamServiceException(AppException):
-    """Exception raised when an external upstream service fails or returns an error."""
-
     def __init__(
         self,
         code: str = "UPSTREAM_SERVICE_ERROR",
@@ -33,8 +29,6 @@ class UpstreamServiceException(AppException):
 
 
 class UpstreamTimeoutException(UpstreamServiceException):
-    """Exception raised when an external upstream service request times out."""
-
     def __init__(
         self,
         code: str = "UPSTREAM_SERVICE_TIMEOUT",
@@ -45,7 +39,6 @@ class UpstreamTimeoutException(UpstreamServiceException):
 
 
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
-    """Exception handler for custom AppException instances."""
     logger.warning(
         f"AppException: code={exc.code} status={exc.status_code} path={request.url.path} message='{exc.message}'"
     )
@@ -61,7 +54,6 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Global exception handler for unexpected unhandled exceptions (HTTP 500)."""
     logger.error(
         f"Unhandled Exception: path={request.url.path} error={exc}",
         exc_info=True,

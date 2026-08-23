@@ -8,8 +8,6 @@ logger = logging.getLogger("sf_movies.middleware")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Middleware to log incoming HTTP requests and their processing duration."""
-
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         start_time = time.perf_counter()
 

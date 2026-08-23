@@ -17,7 +17,6 @@ from app.middleware.request_logging import RequestLoggingMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan event handler for startup and shutdown logic."""
     setup_logging()
     logger = logging.getLogger("sf_movies")
     settings = get_settings()
@@ -27,34 +26,46 @@ async def lifespan(app: FastAPI):
 
 
 def create_application() -> FastAPI:
-    """FastAPI application factory."""
     settings = get_settings()
+
+    docs_url = "/docs" if (settings.enable_docs or settings.is_development) else None
+    redoc_url = "/redoc" if (settings.enable_docs or settings.is_development) else None
+    openapi_url = (
+        "/openapi.json"
+        if (settings.enable_docs or settings.is_development)
+        else None
+    )
 
     app = FastAPI(
         title=settings.app_name,
         version="1.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url=docs_url,
+        redoc_url=redoc_url,
+        openapi_url=openapi_url,
         lifespan=lifespan,
     )
 
-    # Configure CORS
+
+    origins = settings.allowed_origins
+    allow_all_origins = "*" in origins
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[settings.frontend_url],
-        allow_credentials=True,
+        allow_origins=origins,
+        allow_origin_regex=r"https://.*\.vercel\.app",
+        allow_credentials=not allow_all_origins,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    # Register Request Logging Middleware
+
     app.add_middleware(RequestLoggingMiddleware)
 
-    # Register Global Exception Handlers
+
     app.add_exception_handler(AppException, app_exception_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
 
-    # Include API Routers
+
     app.include_router(api_router, prefix=settings.api_prefix)
 
     return app
