@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     log_level: str = "INFO"
     frontend_url: str = "http://localhost:5173"
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origins: str = "*"
     datasf_base_url: str = "https://data.sfgov.org/resource/yitu-d5am.json"
     datasf_app_token: str | None = None
     datasf_timeout_seconds: float = 10.0
@@ -24,6 +24,8 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins(self) -> list[str]:
+        if self.cors_origins.strip() == "*":
+            return ["*"]
         origins = set()
         if self.cors_origins:
             origins.update(o.strip() for o in self.cors_origins.split(",") if o.strip())
