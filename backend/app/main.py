@@ -31,7 +31,7 @@ def create_application() -> FastAPI:
     docs_url = "/docs" if (settings.enable_docs or settings.is_development) else None
     redoc_url = "/redoc" if (settings.enable_docs or settings.is_development) else None
     openapi_url = (
-        f"{settings.api_prefix}/openapi.json"
+        "/openapi.json"
         if (settings.enable_docs or settings.is_development)
         else None
     )
