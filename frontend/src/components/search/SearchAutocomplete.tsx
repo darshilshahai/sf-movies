@@ -5,18 +5,14 @@ import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
 import type { SearchSuggestion } from "../../types/search";
 
 type SearchAutocompleteProps = {
-  /** Callback fired when a suggestion is selected via mouse click or Enter key. */
+
   onSelect: (suggestion: SearchSuggestion) => void;
-  /** Optional callback fired when the search input is cleared. */
+
   onClear?: () => void;
-  /** Custom placeholder text for the search input. */
+
   placeholder?: string;
 };
 
-/**
- * Accessible, keyboard-navigable autocomplete search component.
- * Debounces user input by 300ms before querying backend search suggestions.
- */
 export default function SearchAutocomplete({
   onSelect,
   onClear,
@@ -35,7 +31,6 @@ export default function SearchAutocomplete({
   const isMinLength = debouncedQuery.trim().length >= 2;
   const showDropdown = isOpen && isMinLength;
 
-  // Dismiss dropdown when clicking outside the component
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -104,7 +99,7 @@ export default function SearchAutocomplete({
 
   return (
     <div ref={containerRef} className="relative w-full max-w-xl z-50">
-      {/* Search Input Bar */}
+      {}
       <div className="relative flex items-center">
         <Search className="absolute left-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
 
@@ -146,7 +141,7 @@ export default function SearchAutocomplete({
         )}
       </div>
 
-      {/* Autocomplete Dropdown */}
+      {}
       {showDropdown && (
         <div
           id="search-suggestions-list"
@@ -187,7 +182,7 @@ export default function SearchAutocomplete({
                   role="option"
                   aria-selected={isHighlighted}
                   onMouseDown={(e) => {
-                    // Prevent input blur before click handler completes
+
                     e.preventDefault();
                   }}
                   onClick={() => handleSelect(suggestion)}

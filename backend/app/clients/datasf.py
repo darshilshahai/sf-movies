@@ -10,8 +10,6 @@ logger = logging.getLogger("sf_movies.datasf_client")
 
 
 class DataSFClient:
-    """Asynchronous HTTP client for interacting with the DataSF SODA API."""
-
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
         settings = get_settings()
         self.base_url = settings.datasf_base_url
@@ -20,7 +18,6 @@ class DataSFClient:
         self._client = client
 
     async def _get_client(self) -> httpx.AsyncClient:
-        """Returns the provided HTTPX client or creates a temporary instance."""
         if self._client is not None:
             return self._client
         return httpx.AsyncClient(timeout=httpx.Timeout(self.timeout_seconds))
@@ -34,16 +31,8 @@ class DataSFClient:
         order: str | None = None,
         q: str | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        Fetches raw film location records from the DataSF SODA API.
 
-        :param limit: Maximum number of records to retrieve (default: 100).
-        :param offset: Number of records to skip for pagination (default: 0).
-        :param where: Optional SoQL $where clause string.
-        :param order: Optional SoQL $order clause string.
-        :param q: Optional full-text search string ($q).
-        :return: List of raw DataSF dictionary records.
-        """
+
         params: dict[str, Any] = {
             "$limit": limit,
             "$offset": offset,

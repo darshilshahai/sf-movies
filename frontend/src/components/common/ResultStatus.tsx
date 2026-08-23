@@ -2,18 +2,14 @@ import { Sparkles, X } from "lucide-react";
 import type { SearchSuggestion } from "../../types/search";
 
 type ResultStatusProps = {
-  /** Total number of locations currently displayed on the map. */
+
   count: number;
-  /** Active search autocomplete suggestion filter, if any. */
+
   selectedSuggestion: SearchSuggestion | null;
-  /** Callback fired to reset active search filter. */
+
   onClearFilter: () => void;
 };
 
-/**
- * Presentational component rendering location count badge, singular/plural grammar,
- * active filter callout tag, and accessible WAI-ARIA live updates.
- */
 export default function ResultStatus({
   count,
   selectedSuggestion,
@@ -24,7 +20,7 @@ export default function ResultStatus({
 
   return (
     <div className="space-y-3" role="status" aria-live="polite">
-      {/* Active Filter Callout Badge */}
+      {}
       {selectedSuggestion && (
         <div className="flex items-center justify-between bg-amber-950/40 border border-amber-800/60 px-4 py-2.5 rounded-xl text-xs text-amber-200 shadow-md">
           <div className="flex items-center gap-2 truncate pr-2">
@@ -49,7 +45,7 @@ export default function ResultStatus({
         </div>
       )}
 
-      {/* Location Count Pill */}
+      {}
       <div className="flex items-center justify-between text-xs text-slate-400">
         <span className="font-medium text-slate-300">
           {isFiltered

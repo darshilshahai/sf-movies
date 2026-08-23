@@ -10,7 +10,6 @@ from tests.test_movie_service import FakeDataSFClient
 
 
 def test_search_suggestions_success():
-    """Test GET /api/v1/search/suggestions returns 200 and suggestions list."""
     raw_data = [
         {"title": "Vertigo", "locations": "Mission Dolores"},
         {"title": "The Making of Vertigo", "locations": "Palace of Fine Arts"},
@@ -35,21 +34,18 @@ def test_search_suggestions_success():
 
 
 def test_search_suggestions_missing_query():
-    """Test GET /api/v1/search/suggestions without required q parameter returns 422."""
     client = TestClient(app)
     response = client.get("/api/v1/search/suggestions")
     assert response.status_code == 422
 
 
 def test_search_suggestions_query_too_short():
-    """Test GET /api/v1/search/suggestions with q length < 2 returns 422."""
     client = TestClient(app)
     response = client.get("/api/v1/search/suggestions?q=a")
     assert response.status_code == 422
 
 
 def test_search_suggestions_query_too_long():
-    """Test GET /api/v1/search/suggestions with q length > 100 returns 422."""
     client = TestClient(app)
     long_query = "a" * 101
     response = client.get(f"/api/v1/search/suggestions?q={long_query}")
@@ -57,7 +53,6 @@ def test_search_suggestions_query_too_long():
 
 
 def test_search_suggestions_custom_valid_limit():
-    """Test GET /api/v1/search/suggestions with custom valid limit parameter."""
     raw_data = [
         {"title": f"Movie {i}", "locations": f"Location {i}"}
         for i in range(10)
@@ -77,21 +72,18 @@ def test_search_suggestions_custom_valid_limit():
 
 
 def test_search_suggestions_invalid_limit_zero():
-    """Test GET /api/v1/search/suggestions with limit=0 returns 422."""
     client = TestClient(app)
     response = client.get("/api/v1/search/suggestions?q=vert&limit=0")
     assert response.status_code == 422
 
 
 def test_search_suggestions_invalid_limit_exceeds_max():
-    """Test GET /api/v1/search/suggestions with limit=20 returns 422."""
     client = TestClient(app)
     response = client.get("/api/v1/search/suggestions?q=vert&limit=20")
     assert response.status_code == 422
 
 
 def test_search_suggestions_empty_results():
-    """Test GET /api/v1/search/suggestions with no matches returns 200 and empty data list."""
     fake_service = MovieService(datasf_client=FakeDataSFClient(records=[]))
     app.dependency_overrides[get_movie_service] = lambda: fake_service
 
@@ -107,7 +99,6 @@ def test_search_suggestions_empty_results():
 
 
 def test_search_suggestions_upstream_failure():
-    """Test GET /api/v1/search/suggestions when DataSF fails returns 502 error envelope."""
     fake_service = MovieService(
         datasf_client=FakeDataSFClient(
             raise_exc=UpstreamServiceException(
@@ -131,7 +122,6 @@ def test_search_suggestions_upstream_failure():
 
 
 def test_search_suggestions_whitespace_trimmed_short():
-    """Test GET /api/v1/search/suggestions with whitespace query trimming to < 2 chars returns empty data list."""
     raw_data = [{"title": "Vertigo", "locations": "Mission Dolores"}]
     fake_service = MovieService(datasf_client=FakeDataSFClient(records=raw_data))
     app.dependency_overrides[get_movie_service] = lambda: fake_service

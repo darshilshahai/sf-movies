@@ -13,16 +13,12 @@ type MoviePopupProps = {
   movie: MovieLocation;
 };
 
-/**
- * Presentational component rendering structured movie location metadata inside a Leaflet map popup.
- * Hides missing/null optional fields cleanly without placeholder labels.
- */
 export default function MoviePopup({ movie }: MoviePopupProps) {
   const hasActors = Boolean(movie.actors && movie.actors.length > 0);
 
   return (
     <div className="w-64 max-w-[280px] p-3 text-slate-100 space-y-3 font-sans text-xs">
-      {/* Header: Movie Title & Release Year */}
+      {}
       <header className="border-b border-slate-800/90 pb-2 space-y-1">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-bold text-sm text-amber-400 leading-snug tracking-tight">
@@ -37,7 +33,7 @@ export default function MoviePopup({ movie }: MoviePopupProps) {
         </div>
       </header>
 
-      {/* Primary Location Information */}
+      {}
       <div className="space-y-1.5">
         <div className="flex items-start gap-1.5 text-slate-100">
           <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
@@ -54,10 +50,10 @@ export default function MoviePopup({ movie }: MoviePopupProps) {
         )}
       </div>
 
-      {/* Secondary Metadata Grid */}
+      {}
       {(movie.director || hasActors || movie.production_company || movie.fun_facts) && (
         <div className="space-y-2 border-t border-slate-800/90 pt-2 text-[11px]">
-          {/* Director */}
+          {}
           {movie.director && (
             <div className="flex items-start gap-1.5">
               <Clapperboard className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
@@ -72,7 +68,7 @@ export default function MoviePopup({ movie }: MoviePopupProps) {
             </div>
           )}
 
-          {/* Cast */}
+          {}
           {hasActors && (
             <div className="flex items-start gap-1.5">
               <Users className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
@@ -87,7 +83,7 @@ export default function MoviePopup({ movie }: MoviePopupProps) {
             </div>
           )}
 
-          {/* Production Studio */}
+          {}
           {movie.production_company && (
             <div className="flex items-start gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
@@ -102,7 +98,7 @@ export default function MoviePopup({ movie }: MoviePopupProps) {
             </div>
           )}
 
-          {/* Fun Facts */}
+          {}
           {movie.fun_facts && (
             <div className="flex items-start gap-1.5 bg-amber-950/30 border border-amber-800/40 p-2 rounded-lg mt-2 text-amber-200/90">
               <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />

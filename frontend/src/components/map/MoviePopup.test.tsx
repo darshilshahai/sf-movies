@@ -53,7 +53,6 @@ describe("MoviePopup Component", () => {
     expect(screen.getByText("The Rock")).toBeInTheDocument();
     expect(screen.getByText("Alcatraz Island")).toBeInTheDocument();
 
-    // Verify absent optional sections are NOT rendered in DOM
     expect(screen.queryByText(/Director/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Cast/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Studio/i)).not.toBeInTheDocument();

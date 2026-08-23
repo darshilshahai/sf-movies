@@ -9,10 +9,6 @@ type MapBoundsControllerProps = {
   isFiltered: boolean;
 };
 
-/**
- * Controller component rendered inside MapContainer to adjust Leaflet viewport
- * based on returned movie coordinates and active search filter state.
- */
 export default function MapBoundsController({
   movies,
   isFiltered,
@@ -21,7 +17,7 @@ export default function MapBoundsController({
 
   useEffect(() => {
     if (!isFiltered) {
-      // When filter is cleared, reset map to San Francisco default center & zoom
+
       map.setView(SAN_FRANCISCO_CENTER, DEFAULT_MAP_ZOOM);
       return;
     }
@@ -31,13 +27,12 @@ export default function MapBoundsController({
     }
 
     if (movies.length === 1) {
-      // Single marker: center view around marker coordinates with zoom 15
+
       const { latitude, longitude } = movies[0].coordinates;
       map.setView([latitude, longitude], 15);
       return;
     }
 
-    // Multiple markers: fit bounds around all coordinates with padding
     const bounds = L.latLngBounds(
       movies.map((m) => [m.coordinates.latitude, m.coordinates.longitude])
     );

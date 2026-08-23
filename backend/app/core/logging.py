@@ -4,7 +4,6 @@ from app.core.config import get_settings
 
 
 def setup_logging() -> None:
-    """Configures centralized logging for the FastAPI application."""
     settings = get_settings()
     log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
 

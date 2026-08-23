@@ -28,7 +28,7 @@ async def get_search_suggestions(
     ),
     service: MovieService = Depends(get_movie_service),
 ) -> SearchSuggestionsResponse:
-    """Thin API route handler for GET /api/v1/search/suggestions."""
+
     query = q.strip()
     if len(query) < 2:
         return SearchSuggestionsResponse(data=[])
@@ -38,4 +38,3 @@ async def get_search_suggestions(
         limit=limit,
     )
     return SearchSuggestionsResponse(data=suggestions)
-

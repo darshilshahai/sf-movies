@@ -16,17 +16,14 @@ class Settings(BaseSettings):
 
     @property
     def is_production(self) -> bool:
-        """Returns True if running in a production environment."""
         return self.app_env.lower() in ("production", "prod")
 
     @property
     def is_development(self) -> bool:
-        """Returns True if running in a development environment."""
         return self.app_env.lower() in ("development", "dev", "local")
 
     @property
     def allowed_origins(self) -> list[str]:
-        """Returns a list of allowed CORS origin URLs based on environment and settings."""
         origins = set()
         if self.cors_origins:
             origins.update(o.strip() for o in self.cors_origins.split(",") if o.strip())
@@ -49,5 +46,4 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    """Returns a cached singleton instance of application settings."""
     return Settings()

@@ -17,7 +17,6 @@ from app.middleware.request_logging import RequestLoggingMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan event handler for startup and shutdown logic."""
     setup_logging()
     logger = logging.getLogger("sf_movies")
     settings = get_settings()
@@ -27,7 +26,6 @@ async def lifespan(app: FastAPI):
 
 
 def create_application() -> FastAPI:
-    """FastAPI application factory."""
     settings = get_settings()
 
     docs_url = "/docs" if (settings.enable_docs or settings.is_development) else None
@@ -47,7 +45,7 @@ def create_application() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Configure CORS
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
@@ -56,14 +54,14 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Register Request Logging Middleware
+
     app.add_middleware(RequestLoggingMiddleware)
 
-    # Register Global Exception Handlers
+
     app.add_exception_handler(AppException, app_exception_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
 
-    # Include API Routers
+
     app.include_router(api_router, prefix=settings.api_prefix)
 
     return app

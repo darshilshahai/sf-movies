@@ -1,19 +1,16 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 type ErrorStateProps = {
-  /** Title of the error state. */
+
   title?: string;
-  /** Detailed human-readable explanation of the error. */
+
   message?: string;
-  /** Callback fired to retry fetching data. */
+
   onRetry: () => void;
-  /** Indicates whether retry request is currently executing. */
+
   isRetrying?: boolean;
 };
 
-/**
- * Presentational component rendering error messages with a clear retry action.
- */
 export default function ErrorState({
   title = "Unable to load filming locations",
   message = "We couldn't retrieve movie data from the backend server. The data service may be temporarily unavailable.",

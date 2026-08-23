@@ -8,15 +8,10 @@ import ErrorState from "../components/common/ErrorState";
 import type { SearchSuggestion } from "../types/search";
 import type { GetMoviesParams } from "../types/movie";
 
-/**
- * Main application page integrating movie data fetching, search autocomplete UI,
- * active filter management, responsive Leaflet map, and accessible status indicators.
- */
 export default function HomePage() {
   const [selectedSuggestion, setSelectedSuggestion] =
     useState<SearchSuggestion | null>(null);
 
-  // Derive movie query parameters based on current search filter selection
   const movieParams = useMemo<GetMoviesParams>(() => {
     if (!selectedSuggestion) {
       return { limit: 500 };
@@ -32,7 +27,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Header & Sticky Navigation Bar */}
+      {}
       <header className="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
           <div>
@@ -44,7 +39,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Autocomplete Search Input Bar */}
+          {}
           <div className="flex-1 max-w-xl w-full md:mx-4">
             <SearchAutocomplete
               onSelect={(suggestion) => {
@@ -58,9 +53,9 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Main Content Body Container */}
+      {}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col space-y-4">
-        {/* Active Filter Callout Badge & Location Count Indicator */}
+        {}
         {!isLoading && !isError && data && (
           <ResultStatus
             count={data.data.length}
@@ -69,7 +64,7 @@ export default function HomePage() {
           />
         )}
 
-        {/* Initial Page Loading View */}
+        {}
         {isLoading && (
           <div className="flex-1 flex flex-col items-center justify-center py-24 space-y-4">
             <div className="h-10 w-10 border-4 border-amber-400/20 border-t-amber-400 rounded-full animate-spin" />
@@ -79,7 +74,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Recoverable Error View */}
+        {}
         {isError && (
           <ErrorState
             onRetry={() => refetch()}
@@ -87,10 +82,10 @@ export default function HomePage() {
           />
         )}
 
-        {/* Leaflet Map & Background Updating Indicator */}
+        {}
         {!isLoading && !isError && data && (
           <div className="relative flex-1">
-            {/* Background Refetching Indicator Badge */}
+            {}
             {isFetching && (
               <div className="absolute top-3 right-3 z-10 bg-slate-900/90 text-amber-400 text-xs px-3 py-1.5 rounded-full border border-amber-500/40 flex items-center gap-2 shadow-lg backdrop-blur">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

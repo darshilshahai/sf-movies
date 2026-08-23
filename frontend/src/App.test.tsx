@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { apiClient } from "./api/client";
 
-// Mock MovieMap component to avoid Leaflet JSDOM container sizing issues in unit tests
 vi.mock("./components/map/MovieMap", () => ({
   default: ({
     movies,
@@ -134,7 +133,7 @@ describe("App & HomePage Leaflet Map Integration", () => {
   });
 
   it("filters map server-side when movie suggestion is selected", async () => {
-    // Initial fetch for all movies
+
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       data: {
         data: [
@@ -162,7 +161,6 @@ describe("App & HomePage Leaflet Map Integration", () => {
       expect(screen.getByTestId("mock-movie-map")).toBeInTheDocument();
     });
 
-    // Autocomplete suggestion fetch for "vert"
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       data: {
         data: [{ value: "Vertigo", type: "movie" }],
@@ -176,7 +174,6 @@ describe("App & HomePage Leaflet Map Integration", () => {
       expect(screen.getByText("Vertigo")).toBeInTheDocument();
     });
 
-    // Filtered movie location fetch when "Vertigo" is selected
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       data: {
         data: [
@@ -209,7 +206,6 @@ describe("App & HomePage Leaflet Map Integration", () => {
       ).toBeInTheDocument();
     });
 
-    // Reset filter
     fireEvent.click(screen.getByText("Reset Filter"));
 
     await waitFor(() => {

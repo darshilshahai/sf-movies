@@ -9,20 +9,16 @@ logger = logging.getLogger("sf_movies.movie_service")
 
 
 class MovieService:
-    """Service layer for fetching, normalizing, filtering, and searching DataSF film locations."""
-
     def __init__(self, datasf_client: DataSFClient) -> None:
         self._datasf_client = datasf_client
 
     def _normalize_string(self, value: Any) -> str | None:
-        """Trims leading/trailing whitespace and converts empty strings or None to None."""
         if value is None:
             return None
         s_val = str(value).strip()
         return s_val if s_val else None
 
     def _parse_coordinates(self, record: dict[str, Any]) -> Coordinates | None:
-        """Parses and validates geographic coordinates from raw record fields."""
         raw_lat = record.get("latitude")
         raw_lng = record.get("longitude")
 
@@ -41,7 +37,6 @@ class MovieService:
         return Coordinates(latitude=lat, longitude=lng)
 
     def _parse_release_year(self, record: dict[str, Any]) -> int | None:
-        """Parses release year string to integer safely."""
         raw_year = record.get("release_year")
         if not raw_year:
             return None
@@ -51,7 +46,6 @@ class MovieService:
             return None
 
     def _parse_actors(self, record: dict[str, Any]) -> list[str]:
-        """Extracts, cleans, and deduplicates actor fields into a list."""
         actors: list[str] = []
         for key in ("actor_1", "actor_2", "actor_3"):
             normalized = self._normalize_string(record.get(key))
@@ -66,11 +60,8 @@ class MovieService:
         location: str | None = None,
         year: int | None = None,
     ) -> str | None:
-        """
-        Builds a safe SODA SoQL $where clause for search, title, location, and release_year filters.
 
-        Sanitizes single quotes in text to prevent SoQL injection/syntax errors.
-        """
+
         clauses: list[str] = []
 
         if title:
@@ -99,7 +90,6 @@ class MovieService:
         return " and ".join(clauses)
 
     def normalize_record(self, record: dict[str, Any]) -> MovieLocation | None:
-        """Normalizes a single raw DataSF record into a MovieLocation model, returning None if unusable."""
         title = self._normalize_string(record.get("title"))
         if not title:
             logger.warning("movie_record_skipped reason=missing_title")
@@ -141,17 +131,8 @@ class MovieService:
         limit: int = 100,
         offset: int = 0,
     ) -> list[MovieLocation]:
-        """
-        Fetches raw records from DataSFClient using safe SoQL parameters, normalizing and deduplicating results.
 
-        :param search: Optional title/location fuzzy search query string.
-        :param title: Optional exact movie title query string.
-        :param location: Optional exact filming location query string.
-        :param year: Optional release year integer filter.
-        :param limit: Maximum number of location records to return.
-        :param offset: Pagination offset.
-        :return: List of normalized MovieLocation domain objects.
-        """
+
         soql_where = self._build_soql_where(
             search=search, title=title, location=location, year=year
         )
@@ -195,20 +176,15 @@ class MovieService:
         query: str,
         limit: int = 8,
     ) -> list[SearchSuggestion]:
-        """
-        Retrieves case-insensitive, deduplicated, and ranked autocomplete suggestions for titles and locations.
 
-        :param query: Search query string (minimum 2 characters).
-        :param limit: Maximum number of suggestions to return (default: 8).
-        :return: List of SearchSuggestion domain objects.
-        """
+
         trimmed_query = query.strip()
         if len(trimmed_query) < 2:
             return []
 
         soql_where = self._build_soql_where(search=trimmed_query)
 
-        # Fetch up to 50 raw records from DataSF to ensure sufficient sample for deduplication
+
         raw_records = await self._datasf_client.get_film_locations(
             limit=50,
             offset=0,
@@ -223,25 +199,25 @@ class MovieService:
             title = self._normalize_string(raw.get("title"))
             location = self._normalize_string(raw.get("locations"))
 
-            # Evaluate Title candidate
+
             if title and q_lower in title.lower():
                 dedup_key = (title.lower(), "movie")
                 if dedup_key not in seen_keys:
                     seen_keys.add(dedup_key)
-                    # Rank 1: Movie Title prefix match; Rank 3: Movie Title contains match
+
                     rank = 1 if title.lower().startswith(q_lower) else 3
                     candidates.append((rank, title, "movie"))
 
-            # Evaluate Location candidate
+
             if location and q_lower in location.lower():
                 dedup_key = (location.lower(), "location")
                 if dedup_key not in seen_keys:
                     seen_keys.add(dedup_key)
-                    # Rank 2: Location prefix match; Rank 4: Location contains match
+
                     rank = 2 if location.lower().startswith(q_lower) else 4
                     candidates.append((rank, location, "location"))
 
-        # Sort candidate suggestions by rank ascending, preserving discovery order for ties
+
         candidates.sort(key=lambda item: item[0])
 
         suggestions = [
@@ -254,4 +230,3 @@ class MovieService:
             f"raw_records={len(raw_records)} suggestions_count={len(suggestions)}"
         )
         return suggestions
-

@@ -20,4 +20,3 @@ api_router.include_router(
     prefix="/search",
     tags=["Search"],
 )
-

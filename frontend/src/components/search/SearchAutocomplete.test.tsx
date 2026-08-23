@@ -154,19 +154,16 @@ describe("SearchAutocomplete Component", () => {
       expect(screen.getByText("Vertigo")).toBeInTheDocument();
     });
 
-    // Press ArrowDown to highlight first suggestion ("Vertigo")
     fireEvent.keyDown(input, { key: "ArrowDown" });
     const option1 = screen.getByRole("option", { name: /Vertigo movie/i });
     expect(option1).toHaveAttribute("aria-selected", "true");
 
-    // Press ArrowDown to highlight second suggestion ("Golden Gate Bridge")
     fireEvent.keyDown(input, { key: "ArrowDown" });
     const option2 = screen.getByRole("option", {
       name: /Golden Gate Bridge location/i,
     });
     expect(option2).toHaveAttribute("aria-selected", "true");
 
-    // Press Enter to select highlighted suggestion
     fireEvent.keyDown(input, { key: "Enter" });
 
     expect(mockOnSelect).toHaveBeenCalledWith({
@@ -259,4 +256,3 @@ describe("SearchAutocomplete Component", () => {
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 });
-

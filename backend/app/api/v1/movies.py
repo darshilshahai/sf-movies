@@ -8,7 +8,6 @@ router = APIRouter()
 
 
 def get_movie_service() -> MovieService:
-    """FastAPI dependency provider for MovieService instance."""
     client = DataSFClient()
     return MovieService(datasf_client=client)
 
@@ -60,7 +59,7 @@ async def list_movies(
     ),
     service: MovieService = Depends(get_movie_service),
 ) -> MovieListResponse:
-    """Thin API route handler for GET /api/v1/movies."""
+
     normalized_locations = await service.get_movie_locations(
         search=search,
         title=title,

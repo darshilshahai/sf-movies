@@ -5,12 +5,10 @@ import { SAN_FRANCISCO_CENTER, DEFAULT_MAP_ZOOM } from "../../constants/map";
 import MoviePopup from "./MoviePopup";
 import MapBoundsController from "./MapBoundsController";
 
-// Import Leaflet marker assets explicitly for Vite bundler compatibility
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-// Reconfigure Leaflet's default marker icons to avoid broken asset URLs in Vite
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: () => void })._getIconUrl;
 
 L.Icon.Default.mergeOptions({
@@ -24,10 +22,6 @@ type MovieMapProps = {
   isFiltered?: boolean;
 };
 
-/**
- * Presentational component rendering an interactive Leaflet map focused on San Francisco.
- * Places markers at latitude/longitude coordinates and renders a rich MoviePopup for each location.
- */
 export default function MovieMap({ movies, isFiltered = false }: MovieMapProps) {
   return (
     <div className="w-full h-[450px] md:h-[550px] lg:h-[650px] rounded-xl overflow-hidden shadow-2xl border border-slate-800 relative z-0">
