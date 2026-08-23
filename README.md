@@ -8,11 +8,6 @@ An interactive full-stack web application for exploring movie filming locations 
 - **Backend API**: [https://sf-movies-api.onrender.com](https://sf-movies-api.onrender.com)
 - **API Documentation**: [https://sf-movies-api.onrender.com/docs](https://sf-movies-api.onrender.com/docs)
 
-## Demo Video
-
-- **[Watch the Demo Video](./demo_video.mp4)**
-
----
 
 ## Overview
 
