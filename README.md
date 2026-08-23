@@ -10,7 +10,7 @@ An interactive full-stack web application for exploring movie filming locations 
 
 ## Demo Video
 
-- **[Watch the Demo Video](DEMO_VIDEO_URL_HERE)** *(Replace DEMO_VIDEO_URL_HERE with actual recording link)*
+![SF Movies Application Walkthrough Demo](docs/images/demo_recording.webp)
 
 ---
 
