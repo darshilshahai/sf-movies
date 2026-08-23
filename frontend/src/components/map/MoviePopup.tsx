@@ -19,7 +19,7 @@ export default function MoviePopup({ movie }: MoviePopupProps) {
   return (
     <div className="w-64 max-w-[280px] p-3 text-slate-100 space-y-3 font-sans text-xs">
       {}
-      <header className="border-b border-slate-800/90 pb-2 space-y-1">
+      <header className="border-b border-slate-800/90 pb-2 space-y-1 pr-7">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-bold text-sm text-amber-400 leading-snug tracking-tight">
             {movie.title}
