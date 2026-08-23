@@ -7,7 +7,7 @@ const apiBaseUrl =
 
 if (!apiBaseUrl) {
   throw new Error(
-    "VITE_API_BASE_URL is not configured. Please check your environment configuration."
+    "API_BASE_URL is not configured. Please check your environment configuration."
   );
 }
 
